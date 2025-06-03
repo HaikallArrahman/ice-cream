@@ -1,759 +1,820 @@
 <!DOCTYPE html>
 <html lang="id">
+
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Ice Cream Shop</title>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
-  <link href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css" rel="stylesheet" />
-  <style>
-    body {
-      background-color: #f5f8fa;
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-    }
-    .navbar-custom {
-      background-color: var(--theme-color, #0d6efd);
-    }
-    .navbar-custom .navbar-brand,
-    .navbar-custom .nav-link {
-      color: #fff;
-    }
-    .navbar-custom .nav-link:hover,
-    .navbar-custom .nav-link.active {
-      color: #d0d9ff;
-    }
-    .card-menu {
-      border-radius: 0.75rem;
-      box-shadow: 0 0.25rem 0.5rem rgba(0,0,0,0.1);
-      transition: transform 0.2s ease, box-shadow 0.2s ease;
-      background-color: #fff;
-      cursor: default;
-    }
-    .card-menu:hover {
-      transform: translateY(-6px);
-      box-shadow: 0 0.75rem 1.5rem rgba(0,0,0,0.15);
-    }
-    main.container {
-      flex-grow: 1;
-      padding-top: 2rem;
-      padding-bottom: 3rem;
-      max-width: 960px;
-    }
-    .card-img-top {
-      height: 200px;
-      object-fit: cover;
-      border-radius: 0.75rem 0.75rem 0 0;
-    }
-    #scannerContainer {
-      position: fixed;
-      top: 60px;
-      left: 50%;
-      transform: translateX(-50%);
-      z-index: 1055;
-      background: #fff;
-      border: 2px solid var(--theme-color, #0d6efd);
-      border-radius: 8px;
-      padding: 10px;
-      max-width: 400px;
-      display: none;
-      box-shadow: 0 5px 15px rgba(0,0,0,0.3);
-    }
-    #scannerContainer video {
-      width: 100%;
-      height: auto;
-      border-radius: 4px;
-    }
-    #closeScannerBtn {
-      margin-top: 8px;
-      width: 100%;
-    }
-  </style>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Ice Cream Shop</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <link href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css" rel="stylesheet" />
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
+    <!-- ZXing barcode-scanner library -->
+    <script src="https://cdn.jsdelivr.net/npm/@zxing/browser@0.0.11"></script>
+    <style>
+        body {
+            background-color: #f5f8fa;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .navbar-custom {
+            background-color: var(--theme-color, #0d6efd);
+        }
+
+        .navbar-custom .navbar-brand,
+        .navbar-custom .nav-link {
+            color: #fff;
+        }
+
+        .navbar-custom .nav-link:hover,
+        .navbar-custom .nav-link.active {
+            color: #d0d9ff;
+        }
+
+        .card-menu {
+            border-radius: 0.75rem;
+            box-shadow: 0 0.25rem 0.5rem rgba(0, 0, 0, 0.1);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            background-color: #fff;
+            cursor: default;
+        }
+
+        .card-menu:hover {
+            transform: translateY(-6px);
+            box-shadow: 0 0.75rem 1.5rem rgba(0, 0, 0, 0.15);
+        }
+
+        main.container {
+            flex-grow: 1;
+            padding-top: 2rem;
+            padding-bottom: 3rem;
+            max-width: 960px;
+        }
+
+        .card-img-top {
+            height: 200px;
+            object-fit: cover;
+            border-radius: 0.75rem 0.75rem 0 0;
+        }
+
+        #scannerContainer {
+            position: fixed;
+            top: 60px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 1055;
+            background: #fff;
+            border: 2px solid var(--theme-color, #0d6efd);
+            border-radius: 8px;
+            padding: 10px;
+            max-width: 400px;
+            display: none;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        #scannerContainer video {
+            width: 100%;
+            height: auto;
+            border-radius: 4px;
+        }
+
+        #closeScannerBtn {
+            margin-top: 8px;
+            width: 100%;
+        }
+    </style>
 </head>
+
 <body>
-<nav class="navbar navbar-expand-lg navbar-custom">
-  <div class="container">
-    <a class="navbar-brand" href="#" id="storeName">Toko Ice Cream</a>
-    <button
-      class="navbar-toggler"
-      type="button" data-bs-toggle="collapse" data-bs-target="#navbarResponsive"
-      aria-controls="navbarResponsive" aria-expanded="false" aria-label="Toggle navigation"
-    >
-      <span class="navbar-toggler-icon" style="filter: invert(1)"></span>
-    </button>
-    <div class="collapse navbar-collapse" id="navbarResponsive">
-      <ul class="navbar-nav ms-auto" id="navLinks">
-        <li class="nav-item">
-          <a href="#" class="nav-link" id="loginLink">Admin Login</a>
-        </li>
-      </ul>
-    </div>
-  </div>
-</nav>
-
-<main class="container">
-  <h1 class="page-title text-center mb-4" id="pageTitle">Menu Ice Cream</h1>
-  <div class="mb-3 d-flex flex-column flex-sm-row justify-content-center gap-3">
-    <input type="search" id="searchInput" class="form-control" placeholder="Cari menu ice cream..." aria-label="Cari menu ice cream" style="max-width: 320px;" />
-  </div>
-
-  <div class="row g-4" id="menuList">
-    <!-- Menu cards muncul di sini -->
-  </div>
-</main>
-
-<footer class="text-center py-3 text-muted border-top">
-  &copy; <span id="footerYear"></span> <span id="footerStoreName"></span>. Semua hak cipta dilindungi.
-</footer>
-
-<!-- Scanner container -->
-<div id="scannerContainer" class="text-center">
-  <video id="videoPreview"></video>
-  <button class="btn btn-danger mt-3" id="closeScannerBtn">Tutup Scanner</button>
-</div>
-
-<!-- Modal Login -->
-<div class="modal fade" id="modalLogin" tabindex="-1" aria-labelledby="modalLoginLabel" aria-hidden="true">
-  <div class="modal-dialog">
-    <div class="modal-content">
-      <form id="formLogin">
-        <div class="modal-header">
-          <h5 class="modal-title" id="modalLoginLabel">Login Admin</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-        </div>
-        <div class="modal-body">
-          <div id="loginError" class="alert alert-danger d-none"></div>
-          <div class="mb-3">
-            <label for="loginUsername" class="form-label">Username</label>
-            <input type="text" class="form-control" id="loginUsername" required />
-          </div>
-          <div class="mb-3">
-            <label for="loginPassword" class="form-label">Password</label>
-            <input type="password" class="form-control" id="loginPassword" required />
-          </div>
-        </div>
-        <div class="modal-footer">
-          <button type="submit" class="btn btn-primary">Login</button>
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
-        </div>
-      </form>
-    </div>
-  </div>
-</div>
-
-<!-- Modal Admin Panel -->
-<div class="modal fade" id="modalAdminPanel" tabindex="-1" aria-labelledby="modalAdminPanelLabel" aria-hidden="true">
-  <div class="modal-dialog modal-lg modal-dialog-scrollable">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title" id="modalAdminPanelLabel">Admin Panel</h5>
-        <button type="button" class="btn-close" id="adminLogoutBtn" aria-label="Logout" title="Logout"></button>
-      </div>
-      <div class="modal-body">
-        <ul class="nav nav-tabs mb-3" id="adminTabs" role="tablist">
-          <li class="nav-item" role="presentation">
-            <button class="nav-link active" id="tab-menu-tab" data-bs-toggle="tab" data-bs-target="#tab-menu" type="button" role="tab" aria-controls="tab-menu" aria-selected="true">Kelola Menu</button>
-          </li>
-          <li class="nav-item" role="presentation">
-            <button class="nav-link" id="tab-store-tab" data-bs-toggle="tab" data-bs-target="#tab-store" type="button" role="tab" aria-controls="tab-store" aria-selected="false">Nama Toko & Tema</button>
-          </li>
-          <li class="nav-item" role="presentation">
-            <button class="nav-link" id="tab-admin-tab" data-bs-toggle="tab" data-bs-target="#tab-admin" type="button" role="tab" aria-controls="tab-admin" aria-selected="false">Pengaturan Admin</button>
-          </li>
-        </ul>
-        <div class="tab-content" id="adminTabsContent">
-          <!-- Tab Kelola Menu -->
-          <div class="tab-pane fade show active" id="tab-menu" role="tabpanel" aria-labelledby="tab-menu-tab">
-            <button class="btn btn-success mb-3" id="btnAddMenu">Tambah Menu Baru</button>
-            <div id="menuAdminList" class="list-group"></div>
-
-            <!-- Form tambah/edit menu -->
-            <div id="menuFormContainer" class="mt-4 d-none">
-              <h5 id="menuFormTitle">Tambah Menu</h5>
-              <!-- Scan barcode button -->
-              <button type="button" id="btnScanBarcodeInAdmin" class="btn btn-outline-primary mb-3" title="Scan barcode produk menggunakan kamera perangkat Anda">
-                Scan Barcode via Kamera
-              </button>
-              <form id="menuForm" enctype="multipart/form-data">
-                <input type="hidden" id="menuId" />
-                <div class="mb-3">
-                  <label for="menuName" class="form-label">Nama Menu</label>
-                  <input type="text" id="menuName" class="form-control" required />
-                </div>
-                <div class="mb-3">
-                  <label for="menuPrice" class="form-label">Harga (Rp)</label>
-                  <input type="number" id="menuPrice" class="form-control" min="0" required />
-                </div>
-                <div class="mb-3">
-                  <label for="menuBarcode" class="form-label">Barcode Produk (opsional)</label>
-                  <input type="text" id="menuBarcode" class="form-control" placeholder="Kode barcode unik" pattern="[\da-zA-Z\-]*" />
-                  <div class="form-text">Masukkan kode barcode produk (hanya angka, huruf, dan tanda '-')</div>
-                </div>
-                <div class="mb-3">
-                  <label for="menuImage" class="form-label">URL Gambar (opsional)</label>
-                  <input type="url" id="menuImage" class="form-control" placeholder="https://example.com/image.jpg" />
-                  <div class="form-text">Masukkan URL gambar produk, contoh dari situs image hosting</div>
-                </div>
-                <div class="mb-3">
-                  <label for="menuImageFile" class="form-label">Atau pilih gambar dari komputer (opsional)</label>
-                  <input type="file" id="menuImageFile" class="form-control" accept="image/*" />
-                  <div class="form-text">Pilih gambar dari komputer Anda jika ingin upload gambar lokal.</div>
-                </div>
-                <button type="submit" class="btn btn-primary">Simpan</button>
-                <button type="button" id="menuCancelBtn" class="btn btn-secondary ms-2">Batal</button>
-              </form>
+    <nav class="navbar navbar-expand-lg navbar-custom">
+        <div class="container">
+            <a class="navbar-brand" href="#" id="storeName">Toko Ice Cream</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarResponsive"
+                aria-controls="navbarResponsive" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon" style="filter: invert(1)"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarResponsive">
+                <ul class="navbar-nav ms-auto" id="navLinks">
+                    <li class="nav-item">
+                        <a href="#" class="nav-link" id="loginLink">Admin Login</a>
+                    </li>
+                </ul>
             </div>
-          </div>
-
-          <!-- Tab Nama Toko & Tema -->
-          <div class="tab-pane fade" id="tab-store" role="tabpanel" aria-labelledby="tab-store-tab">
-            <form id="storeForm">
-              <div class="mb-3">
-                <label for="storeNameInput" class="form-label">Nama Toko</label>
-                <input type="text" id="storeNameInput" class="form-control" required />
-              </div>
-              <div class="mb-3">
-                <label for="themeColorInput" class="form-label">Warna Tema (Hex Color)</label>
-                <input type="color" id="themeColorInput" class="form-control form-control-color" required />
-              </div>
-              <button type="submit" class="btn btn-primary">Simpan</button>
-            </form>
-          </div>
-
-          <!-- Tab Pengaturan Admin -->
-          <div class="tab-pane fade" id="tab-admin" role="tabpanel" aria-labelledby="tab-admin-tab">
-            <form id="adminForm">
-              <div class="mb-3">
-                <label for="adminUsername" class="form-label">Username</label>
-                <input type="text" id="adminUsername" class="form-control" required />
-              </div>
-              <div class="mb-3">
-                <label for="adminPassword" class="form-label">Password Baru</label>
-                <input type="password" id="adminPassword" class="form-control" />
-              </div>
-              <div class="mb-3">
-                <label for="adminPassword2" class="form-label">Konfirmasi Password</label>
-                <input type="password" id="adminPassword2" class="form-control" />
-              </div>
-              <button type="submit" class="btn btn-primary">Simpan</button>
-              <small class="form-text text-muted">Kosongkan password jika tidak ingin diubah.</small>
-            </form>
-          </div>
         </div>
-      </div>
+    </nav>
+
+    <main class="container">
+        <h1 class="page-title text-center mb-4" id="pageTitle">Menu Ice Cream</h1>
+        <div class="mb-3 d-flex flex-column flex-sm-row justify-content-center gap-3">
+            <input type="search" id="searchInput" class="form-control" placeholder="Cari menu ice cream..."
+                aria-label="Cari menu ice cream" style="max-width: 320px;" />
+        </div>
+
+        <div class="row g-4" id="menuList">
+            <!-- Menu cards muncul di sini -->
+        </div>
+    </main>
+
+    <footer class="text-center py-3 text-muted border-top">
+        &copy; <span id="footerYear"></span> <span id="footerStoreName"></span>. Semua hak cipta dilindungi.
+    </footer>
+
+    <!-- Scanner container -->
+    <div id="scannerContainer" class="text-center">
+        <video id="videoPreview"></video>
+        <button class="btn btn-danger mt-3" id="closeScannerBtn">Tutup Scanner</button>
     </div>
-  </div>
-</div>
 
-<!-- ZXing barcode-scanner library -->
-<script src="https://cdn.jsdelivr.net/npm/@zxing/browser@0.0.11"></script>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <!-- Modal Login -->
+    <div class="modal fade" id="modalLogin" tabindex="-1" aria-labelledby="modalLoginLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <form id="formLogin">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="modalLoginLabel">Login Admin</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div id="loginError" class="alert alert-danger d-none"></div>
+                        <div class="mb-3">
+                            <label for="loginUsername" class="form-label">Email Admin</label>
+                            <input type="email" class="form-control" id="loginUsername" placeholder="admin email"
+                                autocomplete="username" required />
+                        </div>
+                        <div class="mb-3">
+                            <label for="loginPassword" class="form-label">Password</label>
+                            <input type="password" class="form-control" id="loginPassword"
+                                autocomplete="current-password" required />
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="submit" class="btn btn-primary">Login</button>
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
 
-<script>
-(() => {
-  const ADMIN_KEY = 'icecream_admin';
-  const MENU_KEY = 'icecream_menu';
-  const SITE_KEY = 'icecream_site';
-  const SESSION_KEY = 'icecream_session_loggedin';
+    <!-- Modal Admin Panel -->
+    <div class="modal fade" id="modalAdminPanel" tabindex="-1" aria-labelledby="modalAdminPanelLabel"
+        aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalAdminPanelLabel">Admin Panel</h5>
+                    <button type="button" class="btn-close" id="adminLogoutBtn" aria-label="Logout"
+                        title="Logout"></button>
+                </div>
+                <div class="modal-body">
+                    <ul class="nav nav-tabs mb-3" id="adminTabs" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active" id="tab-menu-tab" data-bs-toggle="tab"
+                                data-bs-target="#tab-menu" type="button" role="tab" aria-controls="tab-menu"
+                                aria-selected="true">Kelola Menu</button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="tab-store-tab" data-bs-toggle="tab" data-bs-target="#tab-store"
+                                type="button" role="tab" aria-controls="tab-store" aria-selected="false">Nama Toko &
+                                Tema</button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="tab-admin-tab" data-bs-toggle="tab" data-bs-target="#tab-admin"
+                                type="button" role="tab" aria-controls="tab-admin" aria-selected="false">Pengaturan
+                                Admin</button>
+                        </li>
+                    </ul>
+                    <div class="tab-content" id="adminTabsContent">
+                        <!-- Tab Kelola Menu -->
+                        <div class="tab-pane fade show active" id="tab-menu" role="tabpanel"
+                            aria-labelledby="tab-menu-tab">
+                            <button class="btn btn-success mb-3" id="btnAddMenu">Tambah Menu Baru</button>
+                            <div id="menuAdminList" class="list-group"></div>
 
-  const defaultAdmin = { username: 'admin', password: 'admin123' };
-  const defaultSite = { storeName: 'Toko Ice Cream', themeColor: '#0d6efd' };
-  const defaultMenu = [
-    { id: 1, name: 'Vanilla', price: 10000, image: 'https://i.ibb.co/cJy7sMx/vanilla.jpg', barcode: '1234567890' },
-    { id: 2, name: 'Chocolate', price: 12000, image: 'https://i.ibb.co/7W0VjKd/chocolate.jpg', barcode: '0987654321' },
-    { id: 3, name: 'Strawberry', price: 11000, image: 'https://i.ibb.co/mzRmDTt/strawberry.jpg', barcode: '1122334455' }
-  ];
+                            <!-- Form tambah/edit menu -->
+                            <div id="menuFormContainer" class="mt-4 d-none">
 
-  const storeNameEl = document.getElementById('storeName');
-  const pageTitleEl = document.getElementById('pageTitle');
-  const footerStoreNameEl = document.getElementById('footerStoreName');
-  const footerYearEl = document.getElementById('footerYear');
-  const menuListEl = document.getElementById('menuList');
-  const navLinksEl = document.getElementById('navLinks');
-  const searchInput = document.getElementById('searchInput');
-  const scannerContainer = document.getElementById('scannerContainer');
-  const videoPreview = document.getElementById('videoPreview');
-  const closeScannerBtn = document.getElementById('closeScannerBtn');
+                                <button type="button" id="btnScanBarcodeInAdmin" class="btn btn-outline-primary mb-3"
+                                    title="Scan barcode produk menggunakan kamera perangkat Anda">
+                                    Scan Barcode via Kamera
+                                </button>
 
-  const modalLogin = new bootstrap.Modal(document.getElementById('modalLogin'));
-  const modalAdminPanel = new bootstrap.Modal(document.getElementById('modalAdminPanel'));
+                                <h5 id="menuFormTitle">Tambah Menu</h5>
+                                <form id="menuForm" enctype="multipart/form-data" autocomplete="off">
+                                    <input type="hidden" id="menuId" />
+                                    <div class="mb-3">
+                                        <label for="menuName" class="form-label">Nama Menu</label>
+                                        <input type="text" id="menuName" class="form-control" autocomplete="off"
+                                            required />
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="menuPrice" class="form-label">Harga (Rp)</label>
+                                        <input type="number" id="menuPrice" class="form-control" min="0" required />
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="menuBarcode" class="form-label">Barcode Produk (opsional)</label>
+                                        <input type="text" id="menuBarcode" class="form-control"
+                                            placeholder="Kode barcode unik" pattern="[\da-zA-Z\-]*"
+                                            autocomplete="off" />
+                                        <div class="form-text">Masukkan kode barcode produk (hanya angka, huruf, dan
+                                            tanda '-')</div>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="menuImage" class="form-label">URL Gambar (opsional)</label>
+                                        <input type="url" id="menuImage" class="form-control"
+                                            placeholder="https://example.com/image.jpg" autocomplete="off" />
+                                        <div class="form-text">Masukkan URL gambar produk, contoh dari situs image
+                                            hosting</div>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="menuImageFile" class="form-label">Atau pilih gambar dari komputer
+                                            (opsional)</label>
+                                        <input type="file" id="menuImageFile" class="form-control" accept="image/*" />
+                                        <div class="form-text">Pilih gambar dari komputer Anda jika ingin upload gambar
+                                            lokal.</div>
+                                    </div>
+                                    <button type="submit" class="btn btn-primary">Simpan</button>
+                                    <button type="button" id="menuCancelBtn"
+                                        class="btn btn-secondary ms-2">Batal</button>
+                                </form>
+                            </div>
+                        </div>
 
-  const formLogin = document.getElementById('formLogin');
-  const loginErrorEl = document.getElementById('loginError');
-  const loginUsername = document.getElementById('loginUsername');
-  const loginPassword = document.getElementById('loginPassword');
+                        <!-- Tab Nama Toko & Tema -->
+                        <div class="tab-pane fade" id="tab-store" role="tabpanel" aria-labelledby="tab-store-tab">
+                            <form id="storeForm" autocomplete="off">
+                                <div class="mb-3">
+                                    <label for="storeNameInput" class="form-label">Nama Toko</label>
+                                    <input type="text" id="storeNameInput" class="form-control" required />
+                                </div>
+                                <div class="mb-3">
+                                    <label for="themeColorInput" class="form-label">Warna Tema (Hex Color)</label>
+                                    <input type="color" id="themeColorInput" class="form-control form-control-color"
+                                        required />
+                                </div>
+                                <button type="submit" class="btn btn-primary">Simpan</button>
+                            </form>
+                        </div>
 
-  const adminLogoutBtn = document.getElementById('adminLogoutBtn');
+                        <!-- Tab Pengaturan Admin -->
+                        <div class="tab-pane fade" id="tab-admin" role="tabpanel" aria-labelledby="tab-admin-tab">
+                            <form id="adminForm" autocomplete="off">
+                                <div class="mb-3">
+                                    <label for="adminUsername" class="form-label">Email Admin</label>
+                                    <input type="email" id="adminUsername" class="form-control" autocomplete="username"
+                                        required />
+                                </div>
+                                <div class="mb-3">
+                                    <label for="adminPassword" class="form-label">Password Baru</label>
+                                    <input type="password" id="adminPassword" class="form-control"
+                                        autocomplete="new-password" />
+                                </div>
+                                <div class="mb-3">
+                                    <label for="adminPassword2" class="form-label">Konfirmasi Password</label>
+                                    <input type="password" id="adminPassword2" class="form-control"
+                                        autocomplete="new-password" />
+                                </div>
+                                <button type="submit" class="btn btn-primary">Simpan</button>
+                                <small class="form-text text-muted">Kosongkan password jika tidak ingin diubah.</small>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 
-  const btnAddMenu = document.getElementById('btnAddMenu');
-  const menuAdminList = document.getElementById('menuAdminList');
-  const menuFormContainer = document.getElementById('menuFormContainer');
-  const menuFormTitle = document.getElementById('menuFormTitle');
-  const menuForm = document.getElementById('menuForm');
-  const menuIdInput = document.getElementById('menuId');
-  const menuNameInput = document.getElementById('menuName');
-  const menuPriceInput = document.getElementById('menuPrice');
-  const menuBarcodeInput = document.getElementById('menuBarcode');
-  const menuImageInput = document.getElementById('menuImage');
-  const menuImageFileInput = document.getElementById('menuImageFile');
-  const menuCancelBtn = document.getElementById('menuCancelBtn');
 
-  const storeForm = document.getElementById('storeForm');
-  const storeNameInput = document.getElementById('storeNameInput');
-  const themeColorInput = document.getElementById('themeColorInput');
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
-  const adminForm = document.getElementById('adminForm');
-  const adminUsernameInput = document.getElementById('adminUsername');
-  const adminPasswordInput = document.getElementById('adminPassword');
-  const adminPassword2Input = document.getElementById('adminPassword2');
+    <script>
+        (() => {
+            // Firebase Config: Ganti dengan config projectmu sendiri!
+            const firebaseConfig = {
+                apiKey: "AIzaSyCxqcqiQ81ZxZsbLwDZc1IsgAdou-lD5fo",
+                authDomain: "ice-cream-59969.firebaseapp.com",
+                projectId: "ice-cream-59969",
+                storageBucket: "ice-cream-59969.firebasestorage.app",
+                messagingSenderId: "986704847404",
+                appId: "1:986704847404:web:800da1b91bf17c49eca789",
+                measurementId: "G-4Y7LELYKB2"
+            };
 
-  let admin = loadFromStorage(ADMIN_KEY) || defaultAdmin;
-  let menu = loadFromStorage(MENU_KEY) || defaultMenu;
-  let site = loadFromStorage(SITE_KEY) || defaultSite;
-  let isLoggedIn = localStorage.getItem(SESSION_KEY) === 'true';
+            // // Initialize Firebase
+            // const app = initializeApp(firebaseConfig);
+            // const analytics = getAnalytics(app);
 
-  let selectedDeviceIdLocal = null;
-  let codeReaderLocal = null;
+            // Init Firebase
+            firebase.initializeApp(firebaseConfig);
+            const auth = firebase.auth();
+            const db = firebase.firestore();
 
-  function saveToStorage(key, data) {
-    localStorage.setItem(key, JSON.stringify(data));
-  }
-  function loadFromStorage(key) {
-    const data = localStorage.getItem(key);
-    return data ? JSON.parse(data) : null;
-  }
-  function sanitize(str) {
-    const div = document.createElement('div');
-    div.textContent = str;
-    return div.innerHTML;
-  }
-  function formatPrice(price) {
-    return price.toLocaleString('id-ID');
-  }
-  function isValidUrl(string) {
-    try {
-      new URL(string);
-      return true;
-    } catch (_) {
-      return false;
-    }
-  }
-  function alertError(message) {
-    return Swal.fire({
-      icon: 'error',
-      title: 'Kesalahan',
-      text: message,
-      confirmButtonText: 'OK'
-    });
-  }
-  function alertSuccess(message) {
-    return Swal.fire({
-      icon: 'success',
-      title: 'Berhasil',
-      text: message,
-      confirmButtonText: 'OK'
-    });
-  }
-  function alertConfirm(message) {
-    return Swal.fire({
-      icon: 'warning',
-      title: 'Konfirmasi',
-      text: message,
-      showCancelButton: true,
-      confirmButtonText: 'Ya',
-      cancelButtonText: 'Batal',
-      reverseButtons: true
-    });
-  }
+            // Elements refs
+            const storeNameEl = document.getElementById('storeName');
+            const pageTitleEl = document.getElementById('pageTitle');
+            const footerStoreNameEl = document.getElementById('footerStoreName');
+            const footerYearEl = document.getElementById('footerYear');
+            const menuListEl = document.getElementById('menuList');
+            const navLinksEl = document.getElementById('navLinks');
 
-  function applyThemeColor() {
-    document.documentElement.style.setProperty('--theme-color', site.themeColor);
-  }
-  function renderStoreName() {
-    storeNameEl.textContent = site.storeName;
-    footerStoreNameEl.textContent = site.storeName;
-    pageTitleEl.textContent = 'Menu Ice Cream ' + site.storeName;
-  }
-  function renderFooterYear() {
-    footerYearEl.textContent = new Date().getFullYear();
-  }
-  function renderMenuList(filter = '') {
-    menuListEl.innerHTML = '';
-    let filteredMenu = menu;
-    if (filter) {
-      const q = filter.trim().toLowerCase();
-      filteredMenu = menu.filter(item =>
-        item.name.toLowerCase().includes(q)
-      );
-    }
-    if (filteredMenu.length === 0) {
-      menuListEl.innerHTML = `<p class="text-center text-muted fs-5">Menu tidak ditemukan.</p>`;
-      return;
-    }
-    filteredMenu.forEach(item => {
-      const col = document.createElement('div');
-      col.className = 'col-12 col-sm-6 col-md-4';
-      col.innerHTML = `
+            const searchInput = document.getElementById('searchInput');
+            const scannerContainer = document.getElementById('scannerContainer');
+            const videoPreview = document.getElementById('videoPreview');
+            const closeScannerBtn = document.getElementById('closeScannerBtn');
+
+            const modalLogin = new bootstrap.Modal(document.getElementById('modalLogin'));
+            const modalAdminPanel = new bootstrap.Modal(document.getElementById('modalAdminPanel'));
+
+            const formLogin = document.getElementById('formLogin');
+            const loginErrorEl = document.getElementById('loginError');
+            const loginUsername = document.getElementById('loginUsername');
+            const loginPassword = document.getElementById('loginPassword');
+
+            const adminLogoutBtn = document.getElementById('adminLogoutBtn');
+            const btnAddMenu = document.getElementById('btnAddMenu');
+            const menuAdminList = document.getElementById('menuAdminList');
+            const menuFormContainer = document.getElementById('menuFormContainer');
+            const menuFormTitle = document.getElementById('menuFormTitle');
+            const menuForm = document.getElementById('menuForm');
+            const menuIdInput = document.getElementById('menuId');
+            const menuNameInput = document.getElementById('menuName');
+            const menuPriceInput = document.getElementById('menuPrice');
+            const menuBarcodeInput = document.getElementById('menuBarcode');
+            const menuImageInput = document.getElementById('menuImage');
+            const menuImageFileInput = document.getElementById('menuImageFile');
+            const menuCancelBtn = document.getElementById('menuCancelBtn');
+            const storeForm = document.getElementById('storeForm');
+            const storeNameInput = document.getElementById('storeNameInput');
+            const themeColorInput = document.getElementById('themeColorInput');
+            const adminForm = document.getElementById('adminForm');
+            const adminUsernameInput = document.getElementById('adminUsername');
+            const adminPasswordInput = document.getElementById('adminPassword');
+            const adminPassword2Input = document.getElementById('adminPassword2');
+            const btnScanBarcodeInAdmin = document.getElementById('btnScanBarcodeInAdmin');
+
+            // Firestore references
+            const adminDocRef = db.collection('config').doc('admin');
+            const menuCollectionRef = db.collection('menu');
+            const siteDocRef = db.collection('config').doc('site');
+
+            // State
+            let adminData = null;
+            let menuData = [];
+            let siteData = null;
+            let codeReaderLocal = null;
+            let selectedDeviceIdLocal = null;
+
+            // Utility functions
+            function sanitize(str) {
+                const div = document.createElement('div');
+                div.textContent = str;
+                return div.innerHTML;
+            }
+            function formatPrice(price) {
+                return price.toLocaleString('id-ID');
+            }
+            function isValidUrl(string) {
+                try {
+                    new URL(string);
+                    return true;
+                } catch (_) {
+                    return false;
+                }
+            }
+            async function alertError(message) {
+                return Swal.fire({
+                    icon: 'error',
+                    title: 'Kesalahan',
+                    text: message,
+                    confirmButtonText: 'OK'
+                });
+            }
+            async function alertSuccess(message) {
+                return Swal.fire({
+                    icon: 'success',
+                    title: 'Berhasil',
+                    text: message,
+                    confirmButtonText: 'OK'
+                });
+            }
+            async function alertConfirm(message) {
+                return Swal.fire({
+                    icon: 'warning',
+                    title: 'Konfirmasi',
+                    text: message,
+                    showCancelButton: true,
+                    confirmButtonText: 'Ya',
+                    cancelButtonText: 'Batal',
+                    reverseButtons: true
+                });
+            }
+
+            // UI Rendering
+            function applyThemeColor() {
+                document.documentElement.style.setProperty('--theme-color', siteData?.themeColor || '#0d6efd');
+            }
+            function renderStoreName() {
+                storeNameEl.textContent = siteData?.storeName || 'Toko Ice Cream';
+                footerStoreNameEl.textContent = siteData?.storeName || 'Toko Ice Cream';
+                pageTitleEl.textContent = 'Menu Ice Cream ' + (siteData?.storeName || '');
+            }
+            function renderFooterYear() {
+                footerYearEl.textContent = new Date().getFullYear();
+            }
+            function renderMenuList(filter = '') {
+                menuListEl.innerHTML = '';
+                let filteredMenu = menuData;
+                if (filter) {
+                    const q = filter.trim().toLowerCase();
+                    filteredMenu = menuData.filter(item =>
+                        item.name.toLowerCase().includes(q)
+                    );
+                }
+                if (filteredMenu.length === 0) {
+                    menuListEl.innerHTML = `<p class="text-center text-muted fs-5">Menu tidak ditemukan.</p>`;
+                    return;
+                }
+                filteredMenu.forEach(item => {
+                    const col = document.createElement('div');
+                    col.className = 'col-12 col-sm-6 col-md-4';
+                    col.innerHTML = `
         <div class="card card-menu h-100">
-          ${
-            item.image
-              ? `<img src="${sanitize(item.image)}" class="card-img-top" alt="${sanitize(item.name)}">`
-              : ''
-          }
+          ${item.image ? `<img src="${sanitize(item.image)}" class="card-img-top" alt="${sanitize(item.name)}">` : ''}
           <div class="card-body text-center">
             <h5 class="card-title">${sanitize(item.name)}</h5>
             <p class="card-text">Harga: Rp ${formatPrice(item.price)}</p>
-            ${
-              item.barcode ? `<p class="text-muted mb-0"><small>Barcode: ${sanitize(item.barcode)}</small></p>` : ''
-            }
+            ${item.barcode ? `<p class="text-muted mb-0"><small>Barcode: ${sanitize(item.barcode)}</small></p>` : ''}
           </div>
         </div>
       `;
-      menuListEl.appendChild(col);
-    });
-  }
-  function renderNav() {
-    navLinksEl.innerHTML = '';
-    if (isLoggedIn) {
-      const liPanel = document.createElement('li');
-      liPanel.className = 'nav-item';
-      liPanel.innerHTML = `<a href="#" class="nav-link" id="openAdminPanelLink">Admin Panel</a>`;
-      navLinksEl.appendChild(liPanel);
+                    menuListEl.appendChild(col);
+                });
+            }
+            function renderNav(user) {
+                navLinksEl.innerHTML = '';
+                if (user) {
+                    const liPanel = document.createElement('li');
+                    liPanel.className = 'nav-item';
+                    liPanel.innerHTML = `<a href="#" class="nav-link" id="openAdminPanelLink">Admin Panel</a>`;
+                    navLinksEl.appendChild(liPanel);
 
-      const liLogout = document.createElement('li');
-      liLogout.className = 'nav-item ms-2';
-      liLogout.innerHTML = `<a href="#" class="nav-link">Logout</a>`;
-      navLinksEl.appendChild(liLogout);
+                    const liLogout = document.createElement('li');
+                    liLogout.className = 'nav-item ms-2';
+                    liLogout.innerHTML = `<a href="#" class="nav-link">Logout</a>`;
+                    navLinksEl.appendChild(liLogout);
 
-      document.getElementById('openAdminPanelLink').addEventListener('click', (e) => {
-        e.preventDefault();
-        openAdminPanel();
-      });
-      liLogout.querySelector('a').addEventListener('click', e => {
-        e.preventDefault();
-        logout();
-      });
-    } else {
-      const liLogin = document.createElement('li');
-      liLogin.className = 'nav-item';
-      liLogin.innerHTML = `<a href="#" class="nav-link" id="navLoginLink">Admin Login</a>`;
-      navLinksEl.appendChild(liLogin);
-      document.getElementById('navLoginLink').addEventListener('click', e => {
-        e.preventDefault();
-        modalLogin.show();
-      });
-    }
-  }
-
-  function login(username, password) {
-    if (username === admin.username && password === admin.password) {
-      isLoggedIn = true;
-      localStorage.setItem(SESSION_KEY, 'true');
-      modalLogin.hide();
-      renderNav();
-      openAdminPanel();
-      formLogin.reset();
-      loginErrorEl.classList.add('d-none');
-      return true;
-    }
-    return false;
-  }
-  function logout() {
-    isLoggedIn = false;
-    localStorage.removeItem(SESSION_KEY);
-    modalAdminPanel.hide();
-    renderNav();
-  }
-
-  function openAdminPanel() {
-    renderMenuAdminList();
-    renderStoreForm();
-    renderAdminForm();
-    clearMenuForm();
-    modalAdminPanel.show();
-  }
-
-  function renderMenuAdminList() {
-    menuAdminList.innerHTML = '';
-    if (menu.length === 0) {
-      menuAdminList.innerHTML = `<div class="text-muted">Belum ada menu.</div>`;
-      return;
-    }
-    menu.forEach(item => {
-      const itemEl = document.createElement('div');
-      itemEl.className = 'list-group-item d-flex justify-content-between align-items-center';
-      itemEl.innerHTML = `
+                    document.getElementById('openAdminPanelLink').addEventListener('click', e => {
+                        e.preventDefault();
+                        openAdminPanel();
+                    });
+                    liLogout.querySelector('a').addEventListener('click', e => {
+                        e.preventDefault();
+                        auth.signOut();
+                    });
+                } else {
+                    const liLogin = document.createElement('li');
+                    liLogin.className = 'nav-item';
+                    liLogin.innerHTML = `<a href="#" class="nav-link" id="navLoginLink">Admin Login</a>`;
+                    navLinksEl.appendChild(liLogin);
+                    document.getElementById('navLoginLink').addEventListener('click', e => {
+                        e.preventDefault();
+                        modalLogin.show();
+                    });
+                }
+            }
+            function renderMenuAdminList() {
+                menuAdminList.innerHTML = '';
+                if (menuData.length === 0) {
+                    menuAdminList.innerHTML = `<div class="text-muted">Belum ada menu.</div>`;
+                    return;
+                }
+                menuData.forEach(item => {
+                    const itemEl = document.createElement('div');
+                    itemEl.className = 'list-group-item d-flex justify-content-between align-items-center';
+                    itemEl.innerHTML = `
         <div>
           <strong>${sanitize(item.name)}</strong><br/>
           Rp ${formatPrice(item.price)}<br/>
           ${item.barcode ? 'Barcode: ' + sanitize(item.barcode) : ''}
         </div>
         <div>
-          <button class="btn btn-sm btn-warning me-2" data-id="${item.id}" aria-label="Edit menu ${sanitize(item.name)}">Edit</button>
-          <button class="btn btn-sm btn-danger" data-id="${item.id}" aria-label="Hapus menu ${sanitize(item.name)}">Hapus</button>
+          <button class="btn btn-sm btn-warning me-2" data-id="${item.id}">Edit</button>
+          <button class="btn btn-sm btn-danger" data-id="${item.id}">Hapus</button>
         </div>
       `;
-      menuAdminList.appendChild(itemEl);
-    });
+                    menuAdminList.appendChild(itemEl);
+                });
+                menuAdminList.querySelectorAll('button.btn-warning').forEach(btn => {
+                    btn.addEventListener('click', () => editMenu(btn.dataset.id));
+                });
+                menuAdminList.querySelectorAll('button.btn-danger').forEach(btn => {
+                    btn.addEventListener('click', async () => {
+                        const result = await alertConfirm('Yakin ingin menghapus menu ini?');
+                        if (result.isConfirmed) {
+                            deleteMenu(parseInt(btn.dataset.id, 10));
+                        }
+                    });
+                });
+            }
+            function clearMenuForm() {
+                menuIdInput.value = '';
+                menuNameInput.value = '';
+                menuPriceInput.value = '';
+                menuBarcodeInput.value = '';
+                menuImageInput.value = '';
+                menuImageFileInput.value = '';
+                menuFormTitle.textContent = 'Tambah Menu';
+                menuFormContainer.classList.add('d-none');
+            }
+            function renderStoreForm() {
+                if (!siteData) return;
+                storeNameInput.value = siteData.storeName || '';
+                themeColorInput.value = siteData.themeColor || '#0d6efd';
+            }
+            function renderAdminForm() {
+                if (!adminData) return;
+                adminUsernameInput.value = adminData.username || '';
+                adminPasswordInput.value = '';
+                adminPassword2Input.value = '';
+            }
 
-    menuAdminList.querySelectorAll('button.btn-warning').forEach(btn => {
-      btn.addEventListener('click', () => editMenu(btn.dataset.id));
-    });
-    menuAdminList.querySelectorAll('button.btn-danger').forEach(btn => {
-      btn.addEventListener('click', async () => {
-        const result = await alertConfirm('Yakin ingin menghapus menu ini?');
-        if (result.isConfirmed) {
-          deleteMenu(btn.dataset.id);
-          alertSuccess('Menu berhasil dihapus.');
-          renderMenuList(searchInput.value);
-        }
-      });
-    });
-  }
+            async function editMenu(id) {
+                const item = menuData.find(m => m.id === Number(id));
+                if (!item) return;
+                menuIdInput.value = item.id;
+                menuNameInput.value = item.name;
+                menuPriceInput.value = item.price;
+                menuBarcodeInput.value = item.barcode || '';
+                menuImageInput.value = item.image || '';
+                menuImageFileInput.value = '';
+                menuFormTitle.textContent = 'Edit Menu';
+                menuFormContainer.classList.remove('d-none');
+            }
+            async function deleteMenu(id) {
+                const snapshot = await menuCollectionRef.where('id', '==', id).get();
+                if (!snapshot.empty) {
+                    for (const doc of snapshot.docs) {
+                        await doc.ref.delete();
+                    }
+                    await alertSuccess('Menu berhasil dihapus.');
+                } else {
+                    await alertError('Menu tidak ditemukan');
+                }
+            }
 
-  async function editMenu(id) {
-    const item = menu.find(m => String(m.id) === String(id));
-    if (!item) return;
-    menuIdInput.value = item.id;
-    menuNameInput.value = item.name;
-    menuPriceInput.value = item.price;
-    menuBarcodeInput.value = item.barcode || '';
-    menuImageInput.value = item.image && !item.image.startsWith('data:') ? item.image : '';
-    menuImageFileInput.value = '';
-    menuFormTitle.textContent = 'Edit Menu';
-    menuFormContainer.classList.remove('d-none');
-  }
+            btnAddMenu.addEventListener('click', () => {
+                clearMenuForm();
+                menuFormContainer.classList.remove('d-none');
+            });
+            menuCancelBtn.addEventListener('click', () => {
+                clearMenuForm();
+            });
+            menuForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const idVal = menuIdInput.value.trim();
+                const name = menuNameInput.value.trim();
+                const price = Number(menuPriceInput.value);
+                const barcodeRaw = menuBarcodeInput.value.trim();
+                const imageUrl = menuImageInput.value.trim();
+                const file = menuImageFileInput.files[0];
 
-  async function deleteMenu(id) {
-    menu = menu.filter(m => String(m.id) !== String(id));
-    saveToStorage(MENU_KEY, menu);
-    renderMenuAdminList();
-    renderMenuList(searchInput.value);
-  }
+                if (!name || price < 0) {
+                    await alertError('Mohon isi nama dan harga dengan benar.');
+                    return;
+                }
+                if (barcodeRaw && !/^[\da-zA-Z\-]+$/.test(barcodeRaw)) {
+                    await alertError('Barcode hanya boleh mengandung angka, huruf, dan tanda "-".');
+                    return;
+                }
+                const conflict = menuData.some(m => m.barcode === barcodeRaw && String(m.id) !== idVal);
+                if (barcodeRaw && conflict) {
+                    await alertError('Barcode sudah digunakan oleh produk lain. Gunakan barcode unik.');
+                    return;
+                }
 
-  function clearMenuForm() {
-    menuIdInput.value = '';
-    menuNameInput.value = '';
-    menuPriceInput.value = '';
-    menuBarcodeInput.value = '';
-    menuImageInput.value = '';
-    menuImageFileInput.value = '';
-    menuFormTitle.textContent = 'Tambah Menu';
-    menuFormContainer.classList.add('d-none');
-  }
+                async function saveMenu(imageDataUrl) {
+                    if (idVal) {
+                        let docId = null;
+                        const q = await menuCollectionRef.where('id', '==', Number(idVal)).get();
+                        q.forEach(d => docId = d.id);
+                        if (!docId) {
+                            await alertError('Menu tidak ditemukan untuk diubah');
+                            return;
+                        }
+                        await menuCollectionRef.doc(docId).set({
+                            id: Number(idVal),
+                            name,
+                            price,
+                            barcode: barcodeRaw || null,
+                            image: imageDataUrl || null
+                        });
+                    } else {
+                        const maxId = menuData.length ? Math.max(...menuData.map(x => x.id)) : 0;
+                        await menuCollectionRef.add({
+                            id: maxId + 1,
+                            name,
+                            price,
+                            barcode: barcodeRaw || null,
+                            image: imageDataUrl || null
+                        });
+                    }
+                    await alertSuccess('Menu berhasil disimpan.');
+                    clearMenuForm();
+                }
 
-  btnAddMenu.addEventListener('click', () => {
-    clearMenuForm();
-    menuFormContainer.classList.remove('d-none');
-  });
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = function (event) {
+                        saveMenu(event.target.result);
+                    };
+                    reader.readAsDataURL(file);
+                } else if (imageUrl && isValidUrl(imageUrl)) {
+                    saveMenu(imageUrl);
+                } else if (!imageUrl && !file) {
+                    saveMenu(null);
+                } else {
+                    await alertError('URL gambar tidak valid.');
+                }
+            });
 
-  menuCancelBtn.addEventListener('click', () => {
-    clearMenuForm();
-  });
+            storeForm.addEventListener('submit', async e => {
+                e.preventDefault();
+                const name = storeNameInput.value.trim();
+                const color = themeColorInput.value.trim();
+                if (!name) {
+                    await alertError('Nama toko tidak boleh kosong.');
+                    return;
+                }
+                if (!/^#([0-9a-fA-F]{6})$/i.test(color)) {
+                    await alertError('Warna tema harus format hex color (misal: #007bff).');
+                    return;
+                }
+                await siteDocRef.set({
+                    storeName: name,
+                    themeColor: color
+                });
+                await alertSuccess('Data toko berhasil disimpan.');
+            });
 
-  menuForm.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const id = menuIdInput.value;
-    const name = menuNameInput.value.trim();
-    const price = Number(menuPriceInput.value);
-    const barcodeRaw = menuBarcodeInput.value.trim();
-    const imageUrl = menuImageInput.value.trim();
-    const file = menuImageFileInput.files[0];
+            adminForm.addEventListener('submit', async e => {
+                e.preventDefault();
+                const email = adminUsernameInput.value.trim();
+                const pass1 = adminPasswordInput.value;
+                const pass2 = adminPassword2Input.value;
 
-    if (!name || price < 0) {
-      await alertError('Mohon isi nama dan harga dengan benar.');
-      return;
-    }
+                if (!email) {
+                    await alertError('Email admin tidak boleh kosong.');
+                    return;
+                }
+                if (pass1 !== pass2) {
+                    await alertError('Password konfirmasi tidak cocok.');
+                    return;
+                }
 
-    if (barcodeRaw && !/^[\da-zA-Z\-]+$/.test(barcodeRaw)) {
-      await alertError('Barcode hanya boleh mengandung angka, huruf, dan tanda "-".');
-      return;
-    }
+                try {
+                    if (auth.currentUser && auth.currentUser.email !== email) {
+                        // Perbarui email Firebase Auth
+                        await auth.currentUser.updateEmail(email);
+                    }
+                    if (pass1) {
+                        await auth.currentUser.updatePassword(pass1);
+                    }
+                } catch (err) {
+                    await alertError('Gagal update email/password: ' + err.message);
+                    return;
+                }
 
-    if (barcodeRaw) {
-      let conflict = false;
-      if (id) {
-        conflict = menu.some(m => m.barcode === barcodeRaw && String(m.id) !== id);
-      } else {
-        conflict = menu.some(m => m.barcode === barcodeRaw);
-      }
-      if (conflict) {
-        await alertError('Barcode sudah digunakan oleh produk lain. Gunakan barcode unik.');
-        return;
-      }
-    }
-    
-    function saveMenu(imageDataUrl) {
-      if (id) {
-        const idx = menu.findIndex(m => String(m.id) === id);
-        if (idx >= 0) {
-          menu[idx].name = name;
-          menu[idx].price = price;
-          menu[idx].barcode = barcodeRaw || null;
-          menu[idx].image = imageDataUrl || null;
-        }
-      } else {
-        const newId = menu.length ? Math.max(...menu.map(m => m.id)) + 1 : 1;
-        menu.push({ id: newId, name, price, barcode: barcodeRaw || null, image: imageDataUrl || null });
-      }
-      saveToStorage(MENU_KEY, menu);
-      renderMenuAdminList();
-      renderMenuList(searchInput.value);
-      clearMenuForm();
-      alertSuccess('Menu berhasil disimpan.');
-    }
+                await adminDocRef.set({ username: email });
+                await alertSuccess('Data admin berhasil disimpan.');
+            });
 
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = function(event) {
-        saveMenu(event.target.result);
-      };
-      reader.readAsDataURL(file);
-    } else if (imageUrl && isValidUrl(imageUrl)) {
-      saveMenu(imageUrl);
-    } else if(!imageUrl && !file) {
-      saveMenu(null);
-    } else {
-      await alertError('URL gambar tidak valid.');
-    }
-  });
+            formLogin.addEventListener('submit', async e => {
+                e.preventDefault();
+                const email = loginUsername.value.trim();
+                const password = loginPassword.value;
 
-  function renderStoreForm() {
-    storeNameInput.value = site.storeName;
-    themeColorInput.value = site.themeColor;
-  }
-  storeForm.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const name = storeNameInput.value.trim();
-    const color = themeColorInput.value.trim();
-    if (!name) {
-      await alertError('Nama toko tidak boleh kosong.');
-      return;
-    }
-    if (!/^#([0-9a-fA-F]{6})$/i.test(color)) {
-      await alertError('Warna tema harus format hex color (misal: #007bff).');
-      return;
-    }
-    site.storeName = name;
-    site.themeColor = color;
-    saveToStorage(SITE_KEY, site);
-    applyThemeColor();
-    renderStoreName();
-    renderFooterYear();
-    await alertSuccess('Data toko berhasil disimpan.');
-  });
+                if (!email || !password) {
+                    loginErrorEl.textContent = 'Email dan password harus diisi.';
+                    loginErrorEl.classList.remove('d-none');
+                    return;
+                }
 
-  function renderAdminForm() {
-    adminUsernameInput.value = admin.username;
-    adminPasswordInput.value = '';
-    adminPassword2Input.value = '';
-  }
-  adminForm.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const username = adminUsernameInput.value.trim();
-    const pass1 = adminPasswordInput.value;
-    const pass2 = adminPassword2Input.value;
+                try {
+                    await auth.signInWithEmailAndPassword(email, password);
+                } catch (error) {
+                    loginErrorEl.textContent = 'Login gagal: ' + error.message;
+                    loginErrorEl.classList.remove('d-none');
+                    await alertError('Email atau password salah.');
+                }
+            });
 
-    if (!username) {
-      await alertError('Username admin tidak boleh kosong.');
-      return;
-    }
-    if (pass1 !== pass2) {
-      await alertError('Password konfirmasi tidak cocok.');
-      return;
-    }
+            auth.onAuthStateChanged(user => {
+                if (user) {
+                    loginErrorEl.classList.add('d-none');
+                    modalLogin.hide();
+                    renderNav(user);
+                    openAdminPanel();
+                    loadDataRealtime();
+                } else {
+                    renderNav(null);
+                    modalAdminPanel.hide();
+                    clearMenuForm();
+                }
+            });
 
-    admin.username = username;
-    if (pass1) {
-      admin.password = pass1;
-    }
-    saveToStorage(ADMIN_KEY, admin);
-    await alertSuccess('Data admin berhasil disimpan.');
-  });
+            adminLogoutBtn.addEventListener('click', async () => {
+                const result = await alertConfirm('Yakin ingin logout?');
+                if (result.isConfirmed) {
+                    await auth.signOut();
+                    clearMenuForm();
+                    modalAdminPanel.hide();
+                }
+            });
 
-  formLogin.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const username = loginUsername.value.trim();
-    const password = loginPassword.value;
-    if (!username || !password) {
-      loginErrorEl.textContent = 'Username dan password harus diisi.';
-      loginErrorEl.classList.remove('d-none');
-      return;
-    }
-    if (login(username, password)) {
-      loginErrorEl.classList.add('d-none');
-    } else {
-      loginErrorEl.textContent = 'Username atau password salah.';
-      loginErrorEl.classList.remove('d-none');
-      await alertError('Username atau password salah.');
-    }
-  });
+            searchInput.addEventListener('input', () => {
+                renderMenuList(searchInput.value);
+            });
 
-  adminLogoutBtn.addEventListener('click', async () => {
-    const result = await alertConfirm('Yakin ingin logout?');
-    if (result.isConfirmed) {
-      logout();
-    }
-  });
+            async function openAdminPanel() {
+                renderMenuAdminList();
+                renderStoreForm();
+                renderAdminForm();
+                clearMenuForm();
+                modalAdminPanel.show();
+            }
 
-  searchInput.addEventListener('input', () => {
-    const query = searchInput.value;
-    renderMenuList(query);
-  });
+            async function loadDataRealtime() {
+                adminDocRef.onSnapshot(doc => {
+                    adminData = doc.exists ? doc.data() : null;
+                    renderAdminForm();
+                });
+                menuCollectionRef.orderBy('id', 'asc').onSnapshot(snapshot => {
+                    menuData = [];
+                    snapshot.forEach(doc => menuData.push(doc.data()));
+                    renderMenuAdminList();
+                    renderMenuList(searchInput.value);
+                });
+                siteDocRef.onSnapshot(doc => {
+                    siteData = doc.exists ? doc.data() : { storeName: 'Toko Ice Cream', themeColor: '#0d6efd' };
+                    applyThemeColor();
+                    renderStoreName();
+                    renderFooterYear();
+                    renderStoreForm();
+                });
+            }
 
-  // Barcode scanner inside admin panel
-  const btnScanBarcodeInAdmin = document.getElementById('btnScanBarcodeInAdmin');
+            btnScanBarcodeInAdmin.addEventListener('click', async () => {
+                try {
+                    if (!codeReaderLocal) {
+                        codeReaderLocal = new ZXing.BrowserMultiFormatReader();
+                    }
+                    const devices = await ZXing.BrowserCodeReader.listVideoInputDevices();
+                    if (devices.length === 0) {
+                        await alertError('Tidak ditemukan kamera perangkat.');
+                        return;
+                    }
+                    selectedDeviceIdLocal = devices[0].deviceId;
+                    scannerContainer.style.display = 'block';
+                    await codeReaderLocal.decodeFromVideoDevice(selectedDeviceIdLocal, videoPreview, (result, err) => {
+                        if (result) {
+                            handleBarcodeScanInAdmin(result.getText());
+                        }
+                    });
+                } catch (error) {
+                    await alertError('Gagal membuka kamera: ' + error.message);
+                }
+            });
 
-  btnScanBarcodeInAdmin.addEventListener('click', async () => {
-    try {
-      if (!codeReaderLocal) {
-        codeReaderLocal = new ZXing.BrowserMultiFormatReader();
-      }
-      const devices = await ZXing.BrowserCodeReader.listVideoInputDevices();
-      if (devices.length === 0) {
-        await alertError('Tidak ditemukan kamera perangkat.');
-        return;
-      }
-      selectedDeviceIdLocal = devices[0].deviceId;
-      scannerContainer.style.display = 'block';
-      await codeReaderLocal.decodeFromVideoDevice(selectedDeviceIdLocal, videoPreview, (result, err) => {
-        if (result) {
-          handleBarcodeScanInAdmin(result.getText());
-        }
-      });
-    } catch (error) {
-      await alertError('Gagal membuka kamera: ' + error.message);
-    }
-  });
+            closeScannerBtn.addEventListener('click', async () => {
+                if (codeReaderLocal) {
+                    await codeReaderLocal.reset();
+                }
+                scannerContainer.style.display = 'none';
+            });
 
-  closeScannerBtn.addEventListener('click', async () => {
-    if (codeReaderLocal) {
-      await codeReaderLocal.reset();
-    }
-    scannerContainer.style.display = 'none';
-  });
+            async function handleBarcodeScanInAdmin(barcodeText) {
+                if (codeReaderLocal) {
+                    await codeReaderLocal.reset();
+                }
+                scannerContainer.style.display = 'none';
+                menuBarcodeInput.value = barcodeText;
+                await alertSuccess(`Barcode berhasil discan dan diisi: ${sanitize(barcodeText)}`);
+            }
 
-  async function handleBarcodeScanInAdmin(barcodeText) {
-    if (codeReaderLocal) {
-      await codeReaderLocal.reset();
-    }
-    scannerContainer.style.display = 'none';
-
-    menuBarcodeInput.value = barcodeText;
-    await alertSuccess(`Barcode berhasil discan dan diisi: ${sanitize(barcodeText)}`);
-  }
-
-  function init() {
-    applyThemeColor();
-    renderStoreName();
-    renderFooterYear();
-    renderMenuList();
-    renderNav();
-  }
-  init();
-})();
-</script>
+            // Init UI
+            function init() {
+                renderFooterYear();
+                renderNav(null);
+                renderMenuList();
+            }
+            init();
+        })();
+    </script>
 </body>
+
 </html>
