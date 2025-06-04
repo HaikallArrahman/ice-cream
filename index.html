@@ -58,14 +58,17 @@
         border-spacing: 0 10px !important;
       }
       #reader {
-        width: 300px;
+        width: 320px;
         margin: 15px auto 0;
+        border-radius: 12px;
+        box-shadow: 0 0 12px rgba(25, 98, 208, 0.5);
       }
       #scanResult {
         text-align: center;
-        margin-top: 10px;
+        margin-top: 12px;
         font-weight: 700;
         color: #1962d0;
+        font-size: 1.25rem;
       }
       /* Overlay Blur */
       #overlayBlur {
@@ -85,10 +88,60 @@
         pointer-events: auto;
         opacity: 1;
       }
+      /* Additional styling */
+      .btn-scan {
+        font-weight: 600;
+        font-size: 1.1rem;
+        padding: 0.5rem 1.5rem;
+        border-radius: 30px;
+        transition: background-color 0.3s ease, box-shadow 0.3s ease;
+      }
+      .btn-scan:hover {
+        background-color: #0d3d81;
+        color: #fff;
+        box-shadow: 0 8px 24px rgba(25, 98, 208, 0.6);
+      }
+      /* Admin header */
+      #judulAdmin {
+        font-weight: 700;
+        color: #1053af;
+      }
+      /* Customize modal */
+      .modal-content {
+        border-radius: 12px;
+        box-shadow: 0 14px 40px rgba(0, 0, 0, 0.15);
+      }
+      .modal-title {
+        color: #0d3d81;
+        font-weight: 700;
+      }
+      /* Adjust form buttons spacing in modal */
+      .modal-footer.d-flex.gap-2 > button {
+        font-size: 1rem;
+        padding: 0.5rem 0;
+        border-radius: 8px;
+        transition: background-color 0.3s ease;
+      }
+      /* Responsive adjustments */
+      @media (max-width: 480px) {
+        #reader {
+          width: 100%;
+        }
+        .btn-scan {
+          padding: 0.5rem 1rem;
+          font-size: 1rem;
+          width: 100%;
+        }
+        #scanResult {
+          font-size: 1rem;
+        }
+      }
     </style>
   </head>
   <body>
-    <button id="btnLogout" class="btn btn-danger d-none">Logout</button>
+    <button id="btnLogout" class="btn btn-danger d-none shadow-sm">
+      Logout
+    </button>
 
     <div id="overlayBlur"></div>
 
@@ -130,13 +183,14 @@
           id="daftar"
           role="tabpanel"
           aria-labelledby="daftar-tab"
+          tabindex="0"
         >
           <h1 class="h3 text-center mb-3 text-primary">
             Daftar Harga Warung Sembako
           </h1>
-          <div class="table-responsive">
+          <div class="table-responsive shadow-sm rounded">
             <table
-              class="table table-striped table-bordered align-middle"
+              class="table table-striped table-bordered align-middle mb-0"
               aria-label="Daftar Harga Produk"
             >
               <thead>
@@ -154,16 +208,23 @@
               </tbody>
             </table>
           </div>
-          <div class="text-center mt-3 mb-4">
-            <button id="btnScanBarcode" class="btn btn-outline-primary">
+
+          <div class="text-center mt-4 mb-4">
+            <button
+              id="btnScanBarcode"
+              class="btn btn-outline-primary btn-scan"
+            >
               Scan Kode Batang
             </button>
-            <button id="btnStopScan" class="btn btn-outline-danger d-none">
+            <button
+              id="btnStopScan"
+              class="btn btn-outline-danger btn-scan d-none"
+            >
               Stop Scan
             </button>
           </div>
           <div id="reader" style="display: none"></div>
-          <div id="scanResult"></div>
+          <div id="scanResult" aria-live="polite" aria-atomic="true"></div>
         </div>
 
         <div
@@ -173,14 +234,20 @@
           aria-labelledby="admin-tab"
           tabindex="0"
         >
-          <h1 id="judulAdmin" class="h3 text-center mb-3 text-primary">
-            Hello {User}
-          </h1>
-          <button id="btnTambah" class="btn btn-primary mb-3" disabled>
+          <h1 id="judulAdmin" class="h3 text-center mb-3">Hello {User}</h1>
+          <button
+            id="btnTambah"
+            class="btn btn-primary mb-3 shadow-sm"
+            disabled
+          >
             Tambah Produk Baru
           </button>
 
-          <form id="formProduk" class="row g-3 d-none" novalidate>
+          <form
+            id="formProduk"
+            class="row g-3 d-none shadow-sm rounded p-4"
+            novalidate
+          >
             <div class="col-md-6">
               <label for="inputNama" class="form-label">Nama Produk</label>
               <input
@@ -189,6 +256,7 @@
                 id="inputNama"
                 required
                 autocomplete="off"
+                placeholder="Masukkan nama produk"
               />
               <div class="invalid-feedback">Mohon isi nama produk.</div>
             </div>
@@ -202,6 +270,7 @@
                 step="100"
                 required
                 autocomplete="off"
+                placeholder="Masukkan harga produk"
               />
               <div class="invalid-feedback">
                 Mohon isi harga produk yang valid.
@@ -223,15 +292,24 @@
               >
             </div>
             <div class="col-12 d-flex gap-2 justify-content-end">
-              <button type="submit" class="btn btn-primary">Simpan</button>
-              <button type="button" class="btn btn-danger" id="btnBatal">
+              <button type="submit" class="btn btn-primary btn-lg px-4">
+                Simpan
+              </button>
+              <button
+                type="button"
+                class="btn btn-danger btn-lg px-4"
+                id="btnBatal"
+              >
                 Batal
               </button>
             </div>
           </form>
 
-          <div class="table-responsive">
-            <table class="table table-striped table-bordered align-middle">
+          <div class="table-responsive shadow-sm rounded mt-4">
+            <table
+              class="table table-striped table-bordered align-middle mb-0"
+              aria-label="Daftar Produk Admin"
+            >
               <thead>
                 <tr>
                   <th>Nama Produk</th>
@@ -276,6 +354,7 @@
                 id="loginEmail"
                 required
                 autocomplete="username"
+                placeholder="Masukkan email"
               />
               <div class="invalid-feedback">
                 Mohon masukkan email yang valid.
@@ -289,16 +368,19 @@
                 id="loginPassword"
                 required
                 autocomplete="current-password"
+                placeholder="Masukkan password"
               />
               <div class="invalid-feedback">Mohon masukkan password.</div>
             </div>
             <div class="text-danger" id="loginError" aria-live="polite"></div>
           </div>
           <div class="modal-footer d-flex gap-2">
-            <button type="submit" class="btn btn-primary w-100">Login</button>
+            <button type="submit" class="btn btn-primary w-100 btn-lg">
+              Login
+            </button>
             <button
               type="button"
-              class="btn btn-danger w-100"
+              class="btn btn-danger w-100 btn-lg"
               id="btnCancelLogin"
             >
               Batal
@@ -373,21 +455,46 @@
 
         const overlayBlur = document.getElementById("overlayBlur");
 
+        // ======= SOUND =======
+        // Simple beep using Web Audio API
+        function playBeep() {
+          try {
+            const ctx = new (window.AudioContext ||
+              window.webkitAudioContext)();
+            const oscillator = ctx.createOscillator();
+            const gainNode = ctx.createGain();
+
+            oscillator.type = "square";
+            oscillator.frequency.value = 880; // Hz beep
+            gainNode.gain.value = 0.2; // volume
+
+            oscillator.connect(gainNode);
+            gainNode.connect(ctx.destination);
+
+            oscillator.start();
+            setTimeout(() => {
+              oscillator.stop();
+              ctx.close();
+            }, 150);
+          } catch {
+            // fallback no sound
+          }
+        }
+
         // ======= VARIABLES =======
         let modeEdit = false;
-        let editId = null; // Firestore document id
+        let editId = null;
         let produkCache = [];
-        let latestProduk = produkCache; // global for scanner search
+        let latestProduk = produkCache;
 
-        // Scanner instance and state
         let html5QrcodeScanner = null;
         let scanning = false;
 
         // ======= FIRESTORE REALTIME LISTENER =======
         let unsubscribeProduk = null;
-
         function mulaiSnapshotListener() {
           if (unsubscribeProduk) unsubscribeProduk();
+
           unsubscribeProduk = db
             .collection("produk")
             .orderBy("nama")
@@ -589,11 +696,12 @@
         const daftarTab = new bootstrap.Tab(daftarTabBtn);
         const adminTab = new bootstrap.Tab(adminTabBtn);
 
+        // HANYA aktifkan blur saat modal login muncul di tab Admin
         adminTabBtn.addEventListener("click", (e) => {
           if (!auth.currentUser) {
             e.preventDefault();
             modalLogin.show();
-            aktifkanBlur(); // blur aktif saat modal login
+            aktifkanBlur();
           }
         });
 
@@ -628,9 +736,27 @@
           daftarTab.show();
         });
 
+        // Hilangkan blur saat modal login ditutup
+        modalLoginEl.addEventListener("hidden.bs.modal", () => {
+          matikanBlur();
+        });
+
         // ======= LOGOUT =======
         btnLogout.onclick = () => {
-          auth.signOut();
+          Swal.fire({
+            title: "Anda yakin ingin logout?",
+            icon: "warning",
+            showCancelButton: true,
+            confirmButtonText: "Ya, Logout",
+            cancelButtonText: "Batal",
+            confirmButtonColor: "#d33",
+            cancelButtonColor: "#3085d6",
+          }).then((result) => {
+            if (result.isConfirmed) {
+              auth.signOut();
+              Swal.fire("Logout berhasil", "", "success");
+            }
+          });
         };
 
         // ======= AUTH STATE CHANGE HANDLER =======
@@ -690,6 +816,7 @@
         }
 
         function tampilkanHasilScan(code) {
+          playBeep();
           const produk = cariProdukByBarcode(code);
           if (produk) {
             scanResultElement.textContent = `Kode Batang ditemukan: ${
@@ -719,7 +846,6 @@
         btnScanBarcode.onclick = () => {
           if (scanning) return;
           scanning = true;
-          // HANYA TOMBOL DAN UI SCAN YANG BERUBAH, TIDAK MENGAKTIFKAN BLUR
           btnScanBarcode.classList.add("d-none");
           btnStopScan.classList.remove("d-none");
           readerElement.style.display = "block";
@@ -750,7 +876,7 @@
                   readerElement.style.display = "none";
                 },
                 (errorMessage) => {
-                  // Ignore scan errors silently
+                  // ignore errors silently
                 }
               )
               .catch((err) => {
@@ -791,33 +917,8 @@
           overlayBlur.classList.remove("active");
         }
 
-        // Klik sembarang area saat belum login -> aktifkan blur dan pindah tab ke Daftar Produk
-        document.addEventListener("click", (e) => {
-          if (!auth.currentUser) {
-            const target = e.target;
-            if (
-              modalLoginEl.contains(target) ||
-              target === btnLogout ||
-              target.closest("#modalLogin") ||
-              target.closest(".nav-tabs") ||
-              target === btnScanBarcode ||
-              target === btnStopScan ||
-              target.closest("#reader")
-            ) {
-              // Jangan aktifkan blur saat klik modal, tombol scan, stop scan, atau scanner
-              return;
-            }
-            aktifkanBlur();
-            if (!daftarTabBtn.classList.contains("active")) {
-              daftarTab.show();
-            }
-          }
-        });
-
-        // Hilangkan blur saat modal login ditutup (misal batal login)
-        modalLoginEl.addEventListener("hidden.bs.modal", () => {
-          matikanBlur();
-        });
+        // ** NO GLOBAL CLICK EVENT TO ACTIVATE BLUR **
+        // Blur only activates on modalLogin show and deactivates on modal hide
       })();
     </script>
   </body>
