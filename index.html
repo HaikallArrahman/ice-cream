@@ -6,6 +6,7 @@
     <title>
       Warung Sembako - Admin dengan Firestore, Auth & Barcode Scanner
     </title>
+
     <!-- Bootstrap 5 -->
     <link
       href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
@@ -17,13 +18,14 @@
       rel="stylesheet"
     />
     <style>
+      /* Base light theme */
       body {
         background: linear-gradient(135deg, #c3e7f7 0%, #fff 100%);
         min-height: 100vh;
         font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
         color: #33475b;
         padding: 30px 15px 50px;
-        transition: filter 0.3s ease;
+        transition: background-color 0.3s ease, color 0.3s ease;
       }
       .container {
         max-width: 900px;
@@ -136,11 +138,102 @@
           font-size: 1rem;
         }
       }
+
+      /* Dark theme */
+      body.dark-theme {
+        background: #121212;
+        color: #ddd;
+      }
+      body.dark-theme .container {
+        background: #1e1e1e;
+        box-shadow: 0 14px 40px rgba(0, 0, 0, 0.7);
+        color: #ddd;
+      }
+      body.dark-theme nav button.nav-link.active {
+        background: linear-gradient(135deg, #4a9cf7 0%, #2768d1 100%);
+        color: #eef5ff !important;
+      }
+      body.dark-theme .table thead {
+        background: #2768d1;
+      }
+      body.dark-theme .table tbody tr {
+        background: #2a2a2a;
+      }
+      body.dark-theme #reader {
+        box-shadow: 0 0 12px #4a9cf7;
+      }
+      body.dark-theme #btnLogout {
+        background-color: #d9534f;
+        color: #fff;
+        border: none;
+      }
+      body.dark-theme .btn-scan:hover {
+        background-color: #4a9cf7;
+      }
+      body.dark-theme .modal-content {
+        background-color: #2a2a2a;
+        color: #ddd;
+      }
+      body.dark-theme .modal-title {
+        color: #4a9cf7;
+      }
+      body.dark-theme .form-control {
+        background-color: #3c3c3c;
+        color: #ddd;
+        border-color: #555;
+      }
+      body.dark-theme .form-control:focus {
+        background-color: #444;
+        color: #fff;
+        border-color: #4a9cf7;
+        box-shadow: 0 0 4px #4a9cf7;
+      }
+      body.dark-theme .btn-primary {
+        background-color: #4a9cf7;
+        border: none;
+      }
+      body.dark-theme .btn-danger {
+        background-color: #d9534f;
+        border: none;
+      }
+
+      /* Settings Panel */
+      #btnOpenSettings {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        z-index: 1052;
+      }
+
+      #settingsModal .form-label {
+        font-weight: 600;
+      }
     </style>
   </head>
   <body>
     <button id="btnLogout" class="btn btn-danger d-none shadow-sm">
       Logout
+    </button>
+
+    <!-- Theme toggle for outside admin -->
+    <!-- <button
+      id="btnToggleTheme"
+      class="btn btn-outline-secondary shadow-sm"
+      style="position: fixed; bottom: 20px; left: 20px; z-index: 1052"
+      aria-label="Toggle theme"
+      title="Toggle Dark/Light Theme"
+    >
+      🌓
+    </button> -->
+
+    <!-- Settings button (inside admin only) -->
+    <button
+      id="btnOpenSettings"
+      class="btn btn-outline-primary d-none shadow-sm"
+      aria-label="Open Settings"
+      title="Pengaturan"
+    >
+      ⚙️ Pengaturan
     </button>
 
     <div id="overlayBlur"></div>
@@ -185,7 +278,7 @@
           aria-labelledby="daftar-tab"
           tabindex="0"
         >
-          <h1 class="h3 text-center mb-3 text-primary">
+          <h1 id="judulDaftarProduk" class="h3 text-center mb-3 text-primary">
             Daftar Harga Warung Sembako
           </h1>
           <div class="table-responsive shadow-sm rounded">
@@ -195,13 +288,17 @@
             >
               <thead>
                 <tr>
-                  <th>Nama Produk</th>
-                  <th>Harga (Rp)</th>
+                  <th data-i18n="product_name">Nama Produk</th>
+                  <th data-i18n="price_rp">Harga (Rp)</th>
                 </tr>
               </thead>
               <tbody id="tabelDaftarProduk">
                 <tr>
-                  <td colspan="2" class="text-center fst-italic">
+                  <td
+                    colspan="2"
+                    class="text-center fst-italic"
+                    data-i18n="loading_data"
+                  >
                     Sedang memuat data...
                   </td>
                 </tr>
@@ -213,12 +310,14 @@
             <button
               id="btnScanBarcode"
               class="btn btn-outline-primary btn-scan"
+              data-i18n="scan_barcode"
             >
               Scan Kode Batang
             </button>
             <button
               id="btnStopScan"
               class="btn btn-outline-danger btn-scan d-none"
+              data-i18n="stop_scan"
             >
               Stop Scan
             </button>
@@ -239,6 +338,7 @@
             id="btnTambah"
             class="btn btn-primary mb-3 shadow-sm"
             disabled
+            data-i18n="add_new_product"
           >
             Tambah Produk Baru
           </button>
@@ -249,7 +349,9 @@
             novalidate
           >
             <div class="col-md-6">
-              <label for="inputNama" class="form-label">Nama Produk</label>
+              <label for="inputNama" class="form-label" data-i18n="product_name"
+                >Nama Produk</label
+              >
               <input
                 type="text"
                 class="form-control"
@@ -258,10 +360,17 @@
                 autocomplete="off"
                 placeholder="Masukkan nama produk"
               />
-              <div class="invalid-feedback">Mohon isi nama produk.</div>
+              <div
+                class="invalid-feedback"
+                data-i18n="please_fill_product_name"
+              >
+                Mohon isi nama produk.
+              </div>
             </div>
             <div class="col-md-6">
-              <label for="inputHarga" class="form-label">Harga (Rp)</label>
+              <label for="inputHarga" class="form-label" data-i18n="price_rp"
+                >Harga (Rp)</label
+              >
               <input
                 type="number"
                 class="form-control"
@@ -272,14 +381,14 @@
                 autocomplete="off"
                 placeholder="Masukkan harga produk"
               />
-              <div class="invalid-feedback">
+              <div class="invalid-feedback" data-i18n="please_fill_valid_price">
                 Mohon isi harga produk yang valid.
               </div>
             </div>
             <div class="col-md-12">
-              <label for="inputBarcode" class="form-label"
-                >Kode Batang (Barcode)</label
-              >
+              <label for="inputBarcode" class="form-label" data-i18n="barcode">
+                Kode Batang (Barcode)
+              </label>
               <input
                 type="text"
                 class="form-control"
@@ -287,23 +396,76 @@
                 autocomplete="off"
                 placeholder="Masukkan kode batang atau scan"
               />
-              <small class="form-text text-muted"
-                >Kode batang ini digunakan untuk pencarian dengan scan.</small
-              >
+              <small class="form-text text-muted" data-i18n="barcode_help">
+                Kode batang ini digunakan untuk pencarian dengan scan.
+              </small>
             </div>
             <div class="col-12 d-flex gap-2 justify-content-end">
-              <button type="submit" class="btn btn-primary btn-lg px-4">
+              <button
+                type="submit"
+                class="btn btn-primary btn-lg px-4"
+                data-i18n="save"
+              >
                 Simpan
               </button>
               <button
                 type="button"
                 class="btn btn-danger btn-lg px-4"
                 id="btnBatal"
+                data-i18n="cancel"
               >
                 Batal
               </button>
             </div>
           </form>
+
+          <!-- Settings Panel inside Admin -->
+          <div
+            id="adminSettings"
+            class="shadow-sm rounded p-4 border mt-4 d-none"
+            aria-label="Pengaturan"
+          >
+            <h3>Pengaturan</h3>
+            <form id="formSettings" novalidate>
+              <div class="mb-3">
+                <label for="settingTitle" class="form-label"
+                  >Judul Halaman Daftar Produk</label
+                >
+                <input
+                  type="text"
+                  id="settingTitle"
+                  class="form-control"
+                  placeholder="Tulis judul (contoh: Daftar Harga Warung Sembako)"
+                  maxlength="50"
+                />
+              </div>
+              <div class="mb-3">
+                <label for="settingLanguage" class="form-label">Bahasa</label>
+                <select
+                  id="settingLanguage"
+                  class="form-select"
+                  aria-label="Pilih Bahasa"
+                >
+                  <option value="id">Bahasa Indonesia</option>
+                  <option value="en">English</option>
+                </select>
+              </div>
+              <!-- <div class="mb-3">
+                <label for="settingTheme" class="form-label">Tema</label>
+                <select
+                  id="settingTheme"
+                  class="form-select"
+                  aria-label="Pilih Tema"
+                >
+                  <option value="light">Light / Terang</option>
+                  <option value="dark">Dark / Gelap</option>
+                </select>
+              </div> -->
+              <button type="submit" class="btn btn-success">
+                Simpan Pengaturan
+              </button>
+            </form>
+          </div>
 
           <div class="table-responsive shadow-sm rounded mt-4">
             <table
@@ -312,14 +474,18 @@
             >
               <thead>
                 <tr>
-                  <th>Nama Produk</th>
-                  <th>Harga (Rp)</th>
-                  <th>Aksi</th>
+                  <th data-i18n="product_name">Nama Produk</th>
+                  <th data-i18n="price_rp">Harga (Rp)</th>
+                  <th data-i18n="actions">Aksi</th>
                 </tr>
               </thead>
               <tbody id="tabelAdminProduk">
                 <tr>
-                  <td colspan="3" class="text-center fst-italic">
+                  <td
+                    colspan="3"
+                    class="text-center fst-italic"
+                    data-i18n="loading_data"
+                  >
                     Sedang memuat data...
                   </td>
                 </tr>
@@ -347,7 +513,9 @@
           </div>
           <div class="modal-body">
             <div class="mb-3">
-              <label for="loginEmail" class="form-label">Email</label>
+              <label for="loginEmail" class="form-label" data-i18n="email"
+                >Email</label
+              >
               <input
                 type="email"
                 class="form-control"
@@ -356,12 +524,14 @@
                 autocomplete="username"
                 placeholder="Masukkan email"
               />
-              <div class="invalid-feedback">
+              <div class="invalid-feedback" data-i18n="please_enter_email">
                 Mohon masukkan email yang valid.
               </div>
             </div>
             <div class="mb-3">
-              <label for="loginPassword" class="form-label">Password</label>
+              <label for="loginPassword" class="form-label" data-i18n="password"
+                >Password</label
+              >
               <input
                 type="password"
                 class="form-control"
@@ -370,18 +540,25 @@
                 autocomplete="current-password"
                 placeholder="Masukkan password"
               />
-              <div class="invalid-feedback">Mohon masukkan password.</div>
+              <div class="invalid-feedback" data-i18n="please_enter_password">
+                Mohon masukkan password.
+              </div>
             </div>
             <div class="text-danger" id="loginError" aria-live="polite"></div>
           </div>
           <div class="modal-footer d-flex gap-2">
-            <button type="submit" class="btn btn-primary w-100 btn-lg">
+            <button
+              type="submit"
+              class="btn btn-primary w-100 btn-lg"
+              data-i18n="login"
+            >
               Login
             </button>
             <button
               type="button"
               class="btn btn-danger w-100 btn-lg"
               id="btnCancelLogin"
+              data-i18n="cancel"
             >
               Batal
             </button>
@@ -406,7 +583,6 @@
 
     <script>
       (() => {
-        // === KONFIGURASI FIREBASE - GANTI SESUAI PROJECT ANDA ===
         const firebaseConfig = {
           apiKey: "AIzaSyD9qhbGRUuKne_6UG_FBO7PwRyakqGO0eE",
           authDomain: "warung-sh-cellular.firebaseapp.com",
@@ -421,14 +597,22 @@
         const auth = firebase.auth();
         const db = firebase.firestore();
 
-        // ======= ELEMENTS =======
+        // Elements
         const daftarTabBtn = document.getElementById("daftar-tab");
         const adminTabBtn = document.getElementById("admin-tab");
         const btnLogout = document.getElementById("btnLogout");
+        const btnOpenSettings = document.getElementById("btnOpenSettings");
+        // const btnToggleTheme = document.getElementById("btnToggleTheme");
+        const overlayBlur = document.getElementById("overlayBlur");
 
+        const judulDaftarProduk = document.getElementById("judulDaftarProduk");
+        const judulAdmin = document.getElementById("judulAdmin");
+
+        // Table bodies
         const tabelDaftarProduk = document.getElementById("tabelDaftarProduk");
         const tabelAdminProduk = document.getElementById("tabelAdminProduk");
 
+        // Admin form elements
         const btnTambah = document.getElementById("btnTambah");
         const formProduk = document.getElementById("formProduk");
         const inputNama = document.getElementById("inputNama");
@@ -436,7 +620,7 @@
         const inputBarcode = document.getElementById("inputBarcode");
         const btnBatal = document.getElementById("btnBatal");
 
-        // Login modal form
+        // Modal login elements
         const modalLoginEl = document.getElementById("modalLogin");
         const modalLogin = new bootstrap.Modal(modalLoginEl, {
           keyboard: false,
@@ -453,10 +637,556 @@
         const readerElement = document.getElementById("reader");
         const scanResultElement = document.getElementById("scanResult");
 
-        const overlayBlur = document.getElementById("overlayBlur");
+        // Settings panel inside admin
+        const adminSettings = document.getElementById("adminSettings");
+        const formSettings = document.getElementById("formSettings");
+        const settingTitle = document.getElementById("settingTitle");
+        const settingLanguage = document.getElementById("settingLanguage");
+        const settingTheme = document.getElementById("settingTheme");
 
-        // ======= SOUND =======
-        // Simple beep using Web Audio API
+        // Variables
+        let modeEdit = false;
+        let editId = null;
+        let produkCache = [];
+        let latestProduk = produkCache;
+
+        let html5QrcodeScanner = null;
+        let scanning = false;
+
+        // Language data for i18n translations
+        const i18nData = {
+          id: {
+            product_name: "Nama Produk",
+            price_rp: "Harga (Rp)",
+            loading_data: "Sedang memuat data...",
+            scan_barcode: "Scan Kode Batang",
+            stop_scan: "Stop Scan",
+            add_new_product: "Tambah Produk Baru",
+            please_fill_product_name: "Mohon isi nama produk.",
+            please_fill_valid_price: "Mohon isi harga produk yang valid.",
+            barcode: "Kode Batang (Barcode)",
+            barcode_help:
+              "Kode batang ini digunakan untuk pencarian dengan scan.",
+            save: "Simpan",
+            cancel: "Batal",
+            actions: "Aksi",
+            email: "Email",
+            please_enter_email: "Mohon masukkan email yang valid.",
+            password: "Password",
+            please_enter_password: "Mohon masukkan password.",
+            login: "Login",
+            loading_failed: "Tidak dapat memuat data.",
+            found_product: "Produk ditemukan",
+            product_not_found:
+              'Produk dengan kode batang "{code}" tidak ditemukan di database.',
+            logout_confirm: "Anda yakin ingin logout?",
+            logout_success: "Logout berhasil",
+            settings_title: "Judul Halaman Daftar Produk",
+            settings_language: "Bahasa",
+            settings_theme: "Tema",
+            settings_save: "Simpan Pengaturan",
+            settings_label: "Pengaturan",
+            toggle_theme: "Toggle Dark/Light Theme",
+          },
+          en: {
+            product_name: "Product Name",
+            price_rp: "Price (Rp)",
+            loading_data: "Loading data...",
+            scan_barcode: "Scan Barcode",
+            stop_scan: "Stop Scan",
+            add_new_product: "Add New Product",
+            please_fill_product_name: "Please fill product name.",
+            please_fill_valid_price: "Please enter a valid price.",
+            barcode: "Barcode",
+            barcode_help: "Barcode used for product lookup by scanning.",
+            save: "Save",
+            cancel: "Cancel",
+            actions: "Actions",
+            email: "Email",
+            please_enter_email: "Please enter a valid email.",
+            password: "Password",
+            please_enter_password: "Please enter the password.",
+            login: "Login",
+            loading_failed: "Failed to load data.",
+            found_product: "Product Found",
+            product_not_found:
+              'Product with barcode "{code}" not found in database.',
+            logout_confirm: "Are you sure you want to logout?",
+            logout_success: "Logout successful",
+            settings_title: "Product List Page Title",
+            settings_language: "Language",
+            settings_theme: "Theme",
+            settings_save: "Save Settings",
+            settings_label: "Settings",
+            toggle_theme: "Toggle Dark/Light Theme",
+          },
+        };
+
+        // Current app state for language and theme
+        let currentLanguage = localStorage.getItem("ws_language") || "id";
+        let currentTheme = localStorage.getItem("ws_theme") || "light";
+        let customTitle = localStorage.getItem("ws_customTitle") || "";
+
+        // ======== Utility functions ========
+        function translatePage(lang) {
+          currentLanguage = lang;
+          localStorage.setItem("ws_language", lang);
+          document.querySelectorAll("[data-i18n]").forEach((el) => {
+            const key = el.getAttribute("data-i18n");
+            const text = i18nData[lang][key];
+            if (text) {
+              if (el.tagName === "INPUT" || el.tagName === "TEXTAREA") {
+                el.placeholder = text;
+              } else {
+                el.textContent = text;
+              }
+            }
+          });
+          // Update placeholders in some elements that don't use data-i18n attributes for placeholder
+          inputNama.placeholder =
+            lang === "id" ? "Masukkan nama produk" : "Enter product name";
+          inputHarga.placeholder =
+            lang === "id" ? "Masukkan harga produk" : "Enter product price";
+          inputBarcode.placeholder =
+            lang === "id"
+              ? "Masukkan kode batang atau scan"
+              : "Enter barcode or scan";
+          loginEmail.placeholder =
+            lang === "id" ? "Masukkan email" : "Enter email";
+          loginPassword.placeholder =
+            lang === "id" ? "Masukkan password" : "Enter password";
+
+          // Update modal login title and buttons
+          const modalLoginLabel = document.getElementById("modalLoginLabel");
+          if (modalLoginLabel)
+            modalLoginLabel.textContent =
+              lang === "id" ? "Login Admin" : "Admin Login";
+
+          // Update buttons with fixed text
+          btnTambah.textContent =
+            lang === "id" ? "Tambah Produk Baru" : "Add New Product";
+          btnScanBarcode.textContent =
+            lang === "id" ? "Scan Kode Batang" : "Scan Barcode";
+          btnStopScan.textContent = lang === "id" ? "Stop Scan" : "Stop Scan";
+
+          // Settings form labels
+          const settingLabels =
+            adminSettings.querySelectorAll("label, h3, button");
+          settingLabels.forEach((lbl) => {
+            if (lbl.tagName === "H3") {
+              lbl.textContent = lang === "id" ? "Pengaturan" : "Settings";
+            } else if (lbl.tagName === "LABEL") {
+              if (lbl.htmlFor === "settingTitle") {
+                lbl.textContent =
+                  lang === "id"
+                    ? "Judul Halaman Daftar Produk"
+                    : "Product List Page Title";
+              } else if (lbl.htmlFor === "settingLanguage") {
+                lbl.textContent = lang === "id" ? "Bahasa" : "Language";
+              } else if (lbl.htmlFor === "settingTheme") {
+                lbl.textContent = lang === "id" ? "Tema" : "Theme";
+              }
+            } else if (lbl.tagName === "BUTTON") {
+              lbl.textContent =
+                lang === "id" ? "Simpan Pengaturan" : "Save Settings";
+            }
+          });
+
+          // Update table headers manually since we used data-i18n attribute there:
+          document
+            .querySelectorAll(
+              "#tabelDaftarProduk thead th, #tabelAdminProduk thead th"
+            )
+            .forEach((th) => {
+              const key = th.getAttribute("data-i18n");
+              if (key && i18nData[lang][key]) {
+                th.textContent = i18nData[lang][key];
+              }
+            });
+
+          // Update table content messages if empty or loading:
+          if (tabelDaftarProduk.children.length === 0) {
+            tabelDaftarProduk.innerHTML = `<tr><td colspan="2" class="text-center fst-italic">${i18nData[lang].loading_data}</td></tr>`;
+          }
+          if (tabelAdminProduk.children.length === 0) {
+            tabelAdminProduk.innerHTML = `<tr><td colspan="3" class="text-center fst-italic">${i18nData[lang].loading_data}</td></tr>`;
+          }
+        }
+        // function applyTheme(theme) {
+        //   currentTheme = theme;
+        //   if (theme === "dark") {
+        //     document.body.classList.add("dark-theme");
+        //   } else {
+        //     document.body.classList.remove("dark-theme");
+        //   }
+        //   localStorage.setItem("ws_theme", theme);
+        //   // Update toggle button aria-label/title
+        //   btnToggleTheme.setAttribute(
+        //     "aria-label",
+        //     i18nData[currentLanguage].toggle_theme || "Toggle Dark/Light Theme"
+        //   );
+        //   btnToggleTheme.title = btnToggleTheme.getAttribute("aria-label");
+        // }
+        function updateTitle(newTitle) {
+          if (newTitle.trim() === "") {
+            // reset to default language title
+            customTitle = "";
+          } else {
+            customTitle = newTitle.trim();
+          }
+          localStorage.setItem("ws_customTitle", customTitle);
+          renderTitle();
+        }
+        function renderTitle() {
+          // Use customTitle if set, else default language title
+          if (customTitle) {
+            judulDaftarProduk.textContent = customTitle;
+          } else {
+            judulDaftarProduk.textContent =
+              currentLanguage === "id"
+                ? "Daftar Harga Warung Sembako"
+                : "Product Price List";
+          }
+        }
+
+        // ========= Initial setup =========
+        // On page load apply language, theme and title from localStorage
+        translatePage(currentLanguage);
+        // applyTheme(currentTheme);
+        renderTitle();
+
+        // ========= Firebase + App Logic =========
+
+        // Firestore + Auth setup
+        let unsubscribeProduk = null;
+
+        function mulaiSnapshotListener() {
+          if (unsubscribeProduk) unsubscribeProduk();
+
+          unsubscribeProduk = db
+            .collection("produk")
+            .orderBy("nama")
+            .onSnapshot(
+              (snapshot) => {
+                const items = [];
+                snapshot.forEach((doc) =>
+                  items.push({ id: doc.id, ...doc.data() })
+                );
+                produkCache = items;
+                latestProduk = produkCache;
+                renderDaftarProduk(items);
+                renderAdminProduk(items);
+              },
+              (error) => {
+                if (auth.currentUser) {
+                  Swal.fire(
+                    i18nData[currentLanguage].loading_failed,
+                    error.message,
+                    "error"
+                  );
+                }
+                if (unsubscribeProduk) {
+                  unsubscribeProduk();
+                  unsubscribeProduk = null;
+                }
+                tabelDaftarProduk.innerHTML = `<tr><td colspan="2" class="text-center fst-italic">${i18nData[currentLanguage].loading_failed}</td></tr>`;
+                tabelAdminProduk.innerHTML = `<tr><td colspan="3" class="text-center fst-italic">${i18nData[currentLanguage].loading_failed}</td></tr>`;
+              }
+            );
+        }
+
+        // Render daftar produk di halaman publik
+        function renderDaftarProduk(items) {
+          if (!items.length) {
+            tabelDaftarProduk.innerHTML = `<tr><td colspan="2" class="text-center fst-italic">${i18nData[currentLanguage].loading_failed}</td></tr>`;
+            return;
+          }
+          tabelDaftarProduk.innerHTML = items
+            .map(
+              (p) =>
+                `<tr>
+                  <td>${p.nama} ${
+                  p.barcode
+                    ? `<small class="text-muted">[${p.barcode}]</small>`
+                    : ""
+                }</td>
+                  <td>Rp ${p.harga.toLocaleString("id-ID")}</td>
+                </tr>`
+            )
+            .join("");
+        }
+        // Render produk di admin panel
+        function renderAdminProduk(items) {
+          if (!items.length) {
+            tabelAdminProduk.innerHTML = `<tr><td colspan="3" class="text-center fst-italic">${i18nData[currentLanguage].loading_failed}</td></tr>`;
+            return;
+          }
+          tabelAdminProduk.innerHTML = items
+            .map(
+              (p) =>
+                `<tr data-id="${p.id}">
+                  <td>${p.nama}</td>
+                  <td>Rp ${p.harga.toLocaleString("id-ID")}</td>
+                  <td>
+                    <button class="btn btn-warning btn-sm me-2 btn-edit">Edit</button>
+                    <button class="btn btn-danger btn-sm btn-delete">Hapus</button>
+                  </td>
+                </tr>`
+            )
+            .join("");
+          tabelAdminProduk.querySelectorAll(".btn-edit").forEach((btn) => {
+            btn.onclick = () => {
+              const tr = btn.closest("tr");
+              editId = tr.getAttribute("data-id");
+              const produk = produkCache.find((p) => p.id === editId);
+              if (!produk) return;
+              inputNama.value = produk.nama;
+              inputHarga.value = produk.harga;
+              inputBarcode.value = produk.barcode || "";
+              openForm(true);
+            };
+          });
+          tabelAdminProduk.querySelectorAll(".btn-delete").forEach((btn) => {
+            btn.onclick = () => {
+              const tr = btn.closest("tr");
+              const id = tr.getAttribute("data-id");
+              Swal.fire({
+                title: "Yakin ingin menghapus produk ini?",
+                icon: "warning",
+                showCancelButton: true,
+                confirmButtonColor: "#d33",
+                cancelButtonColor: "#3085d6",
+                confirmButtonText:
+                  currentLanguage === "id" ? "Ya, hapus!" : "Yes, delete!",
+                cancelButtonText: currentLanguage === "id" ? "Batal" : "Cancel",
+              }).then((result) => {
+                if (result.isConfirmed) {
+                  db.collection("produk")
+                    .doc(id)
+                    .delete()
+                    .then(() => {
+                      Swal.fire(
+                        currentLanguage === "id" ? "Terhapus!" : "Deleted!",
+                        currentLanguage === "id"
+                          ? "Produk berhasil dihapus."
+                          : "Product successfully deleted.",
+                        "success"
+                      );
+                    })
+                    .catch((err) => {
+                      Swal.fire("Error", err.message, "error");
+                    });
+                }
+              });
+            };
+          });
+        }
+
+        // Form open/close admin product
+        function openForm(edit = false) {
+          modeEdit = edit;
+          formProduk.classList.remove("d-none");
+          btnTambah.disabled = true;
+          inputNama.focus();
+        }
+        function closeForm() {
+          formProduk.classList.add("d-none");
+          btnTambah.disabled = false;
+          modeEdit = false;
+          editId = null;
+          formProduk.reset();
+          formProduk.classList.remove("was-validated");
+        }
+
+        btnTambah.onclick = () => openForm(false);
+        btnBatal.onclick = () => closeForm();
+
+        formProduk.addEventListener("submit", (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          formProduk.classList.add("was-validated");
+          if (!formProduk.checkValidity()) return;
+
+          const nama = inputNama.value.trim();
+          const harga = Number(inputHarga.value);
+          const barcode = inputBarcode.value.trim();
+
+          if (nama === "" || isNaN(harga) || harga < 0) {
+            Swal.fire(
+              "Error",
+              currentLanguage === "id"
+                ? "Isi nama dan harga produk dengan benar."
+                : "Please fill in the product name and price correctly.",
+              "error"
+            );
+            return;
+          }
+
+          if (modeEdit && editId) {
+            db.collection("produk")
+              .doc(editId)
+              .update({ nama, harga, barcode: barcode || null })
+              .then(() => {
+                Swal.fire(
+                  currentLanguage === "id" ? "Berhasil" : "Success",
+                  currentLanguage === "id"
+                    ? "Produk berhasil diperbarui."
+                    : "Product successfully updated.",
+                  "success"
+                );
+                closeForm();
+              })
+              .catch((err) => {
+                Swal.fire("Error", err.message, "error");
+              });
+          } else {
+            db.collection("produk")
+              .add({ nama, harga, barcode: barcode || null })
+              .then(() => {
+                Swal.fire(
+                  currentLanguage === "id" ? "Berhasil" : "Success",
+                  currentLanguage === "id"
+                    ? "Produk berhasil ditambahkan."
+                    : "Product successfully added.",
+                  "success"
+                );
+                closeForm();
+              })
+              .catch((err) => {
+                Swal.fire("Error", err.message, "error");
+              });
+          }
+        });
+
+        // Tab management
+        const daftarTab = new bootstrap.Tab(daftarTabBtn);
+        const adminTab = new bootstrap.Tab(adminTabBtn);
+
+        // Blur activation only on login modal
+        adminTabBtn.addEventListener("click", (e) => {
+          if (!auth.currentUser) {
+            e.preventDefault();
+            modalLogin.show();
+            aktifkanBlur();
+          }
+        });
+
+        // Login modal handlers
+        formLogin.addEventListener("submit", (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          formLogin.classList.add("was-validated");
+          loginErrorDiv.textContent = "";
+
+          if (!formLogin.checkValidity()) return;
+
+          auth
+            .signInWithEmailAndPassword(
+              loginEmail.value.trim(),
+              loginPassword.value
+            )
+            .then(() => {
+              modalLogin.hide();
+              formLogin.reset();
+              formLogin.classList.remove("was-validated");
+              Swal.fire(
+                currentLanguage === "id"
+                  ? "Login berhasil"
+                  : "Login successful",
+                "",
+                "success"
+              );
+              adminTab.show();
+            })
+            .catch((err) => {
+              loginErrorDiv.textContent = err.message;
+            });
+        });
+
+        btnCancelLogin.addEventListener("click", () => {
+          modalLogin.hide();
+          daftarTab.show();
+        });
+
+        modalLoginEl.addEventListener("hidden.bs.modal", () => {
+          matikanBlur();
+        });
+
+        // Logout with confirmation
+        btnLogout.onclick = () => {
+          Swal.fire({
+            title: i18nData[currentLanguage].logout_confirm,
+            icon: "warning",
+            showCancelButton: true,
+            confirmButtonText:
+              currentLanguage === "id" ? "Ya, Logout" : "Yes, Logout",
+            cancelButtonText: currentLanguage === "id" ? "Batal" : "Cancel",
+            confirmButtonColor: "#d33",
+            cancelButtonColor: "#3085d6",
+          }).then((result) => {
+            if (result.isConfirmed) {
+              auth.signOut();
+              Swal.fire(
+                i18nData[currentLanguage].logout_success,
+                "",
+                "success"
+              );
+            }
+          });
+        };
+
+        // Auth state changed
+        auth.onAuthStateChanged((user) => {
+          if (user) {
+            matikanBlur();
+            btnLogout.classList.remove("d-none");
+            btnTambah.disabled = false;
+            btnOpenSettings.classList.remove("d-none");
+            mulaiSnapshotListener();
+
+            let namaUser = "Admin";
+            if (user.displayName && user.displayName.trim()) {
+              namaUser = user.displayName;
+            } else if (user.email) {
+              namaUser = user.email.split("@")[0];
+            }
+            judulAdmin.textContent = `Hello ${namaUser}!`;
+            adminSettings.classList.remove("d-none");
+          } else {
+            btnLogout.classList.add("d-none");
+            btnTambah.disabled = true;
+            btnOpenSettings.classList.add("d-none");
+            adminSettings.classList.add("d-none");
+            closeForm();
+            if (unsubscribeProduk) {
+              unsubscribeProduk();
+              unsubscribeProduk = null;
+            }
+            tabelDaftarProduk.innerHTML = `<tr><td colspan="2" class="text-center fst-italic">${i18nData[currentLanguage].loading_failed}</td></tr>`;
+            tabelAdminProduk.innerHTML = `<tr><td colspan="3" class="text-center fst-italic">${i18nData[currentLanguage].loading_failed}</td></tr>`;
+
+            judulAdmin.textContent = "Hello {User}";
+
+            if (document.querySelector(".nav-link.active").id === "admin-tab") {
+              daftarTab.show();
+            }
+          }
+          renderTitle();
+        });
+
+        // Barcode scanner setup
+        if (window.Html5Qrcode) {
+          html5QrcodeScanner = new Html5Qrcode("reader");
+        } else {
+          console.warn("Library html5-qrcode belum dimuat.");
+        }
+
+        function cariProdukByBarcode(code) {
+          if (!code) return null;
+          code = code.trim();
+          if (!Array.isArray(latestProduk)) return null;
+          return latestProduk.find((p) => p.barcode && p.barcode === code);
+        }
         function playBeep() {
           try {
             const ctx = new (window.AudioContext ||
@@ -480,363 +1210,32 @@
             // fallback no sound
           }
         }
-
-        // ======= VARIABLES =======
-        let modeEdit = false;
-        let editId = null;
-        let produkCache = [];
-        let latestProduk = produkCache;
-
-        let html5QrcodeScanner = null;
-        let scanning = false;
-
-        // ======= FIRESTORE REALTIME LISTENER =======
-        let unsubscribeProduk = null;
-        function mulaiSnapshotListener() {
-          if (unsubscribeProduk) unsubscribeProduk();
-
-          unsubscribeProduk = db
-            .collection("produk")
-            .orderBy("nama")
-            .onSnapshot(
-              (snapshot) => {
-                const items = [];
-                snapshot.forEach((doc) =>
-                  items.push({ id: doc.id, ...doc.data() })
-                );
-                produkCache = items;
-                latestProduk = produkCache;
-                renderDaftarProduk(items);
-                renderAdminProduk(items);
-              },
-              (error) => {
-                if (auth.currentUser) {
-                  Swal.fire(
-                    "Error",
-                    "Gagal memuat data produk: " + error.message,
-                    "error"
-                  );
-                }
-                if (unsubscribeProduk) {
-                  unsubscribeProduk();
-                  unsubscribeProduk = null;
-                }
-                tabelDaftarProduk.innerHTML =
-                  '<tr><td colspan="2" class="text-center fst-italic">Tidak dapat memuat data.</td></tr>';
-                tabelAdminProduk.innerHTML =
-                  '<tr><td colspan="3" class="text-center fst-italic">Tidak dapat memuat data.</td></tr>';
-              }
-            );
-        }
-
-        // ======= RENDER DAFTAR PRODUK =======
-        function renderDaftarProduk(items) {
-          produkCache = items;
-          latestProduk = produkCache;
-          if (items.length === 0) {
-            tabelDaftarProduk.innerHTML =
-              '<tr><td colspan="2" class="text-center fst-italic">Belum ada produk tersedia.</td></tr>';
-            return;
-          }
-          tabelDaftarProduk.innerHTML = items
-            .map(
-              (p) =>
-                `<tr>
-                  <td>${p.nama} ${
-                  p.barcode
-                    ? `<small class="text-muted">[${p.barcode}]</small>`
-                    : ""
-                }</td>
-                  <td>Rp ${p.harga.toLocaleString("id-ID")}</td>
-                </tr>`
-            )
-            .join("");
-        }
-
-        // ======= RENDER HALAMAN ADMIN PRODUK =======
-        function renderAdminProduk(items) {
-          produkCache = items;
-          latestProduk = produkCache;
-          if (items.length === 0) {
-            tabelAdminProduk.innerHTML =
-              '<tr><td colspan="3" class="text-center fst-italic">Belum ada produk tersedia.</td></tr>';
-            return;
-          }
-          tabelAdminProduk.innerHTML = items
-            .map(
-              (p) =>
-                `<tr data-id="${p.id}">
-                  <td>${p.nama}</td>
-                  <td>Rp ${p.harga.toLocaleString("id-ID")}</td>
-                  <td>
-                    <button class="btn btn-warning btn-sm me-2 btn-edit">Edit</button>
-                    <button class="btn btn-danger btn-sm btn-delete">Hapus</button>
-                  </td>
-                </tr>`
-            )
-            .join("");
-
-          tabelAdminProduk.querySelectorAll(".btn-edit").forEach((btn) => {
-            btn.onclick = () => {
-              const tr = btn.closest("tr");
-              editId = tr.getAttribute("data-id");
-              const produk = produkCache.find((p) => p.id === editId);
-              if (!produk) return;
-              inputNama.value = produk.nama;
-              inputHarga.value = produk.harga;
-              inputBarcode.value = produk.barcode || "";
-              openForm(true);
-            };
-          });
-
-          tabelAdminProduk.querySelectorAll(".btn-delete").forEach((btn) => {
-            btn.onclick = () => {
-              const tr = btn.closest("tr");
-              const id = tr.getAttribute("data-id");
-              Swal.fire({
-                title: "Yakin ingin menghapus produk ini?",
-                icon: "warning",
-                showCancelButton: true,
-                confirmButtonColor: "#d33",
-                cancelButtonColor: "#3085d6",
-                confirmButtonText: "Ya, hapus!",
-              }).then((result) => {
-                if (result.isConfirmed) {
-                  db.collection("produk")
-                    .doc(id)
-                    .delete()
-                    .then(() => {
-                      Swal.fire(
-                        "Terhapus!",
-                        "Produk berhasil dihapus.",
-                        "success"
-                      );
-                    })
-                    .catch((err) => {
-                      Swal.fire(
-                        "Error",
-                        "Gagal menghapus produk: " + err.message,
-                        "error"
-                      );
-                    });
-                }
-              });
-            };
-          });
-        }
-
-        // ======= FORM UTILITY =======
-        function openForm(edit = false) {
-          modeEdit = edit;
-          formProduk.classList.remove("d-none");
-          btnTambah.disabled = true;
-          inputNama.focus();
-        }
-        function closeForm() {
-          formProduk.classList.add("d-none");
-          btnTambah.disabled = false;
-          modeEdit = false;
-          editId = null;
-          formProduk.reset();
-          formProduk.classList.remove("was-validated");
-        }
-
-        // ======= EVENT FORM TAMBAH PRODUK =======
-        btnTambah.onclick = () => openForm(false);
-        btnBatal.onclick = () => closeForm();
-
-        formProduk.addEventListener("submit", (e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          formProduk.classList.add("was-validated");
-          if (!formProduk.checkValidity()) return;
-
-          const nama = inputNama.value.trim();
-          const harga = Number(inputHarga.value);
-          const barcode = inputBarcode.value.trim();
-
-          if (nama === "" || isNaN(harga) || harga < 0) {
-            Swal.fire(
-              "Error",
-              "Isi nama dan harga produk dengan benar.",
-              "error"
-            );
-            return;
-          }
-
-          if (modeEdit && editId) {
-            db.collection("produk")
-              .doc(editId)
-              .update({ nama, harga, barcode: barcode || null })
-              .then(() => {
-                Swal.fire("Berhasil", "Produk berhasil diperbarui.", "success");
-                closeForm();
-              })
-              .catch((err) => {
-                Swal.fire("Error", err.message, "error");
-              });
-          } else {
-            db.collection("produk")
-              .add({ nama, harga, barcode: barcode || null })
-              .then(() => {
-                Swal.fire(
-                  "Berhasil",
-                  "Produk berhasil ditambahkan.",
-                  "success"
-                );
-                closeForm();
-              })
-              .catch((err) => {
-                Swal.fire("Error", err.message, "error");
-              });
-          }
-        });
-
-        // ======= TAB MANAGEMENT =======
-        const daftarTab = new bootstrap.Tab(daftarTabBtn);
-        const adminTab = new bootstrap.Tab(adminTabBtn);
-
-        // HANYA aktifkan blur saat modal login muncul di tab Admin
-        adminTabBtn.addEventListener("click", (e) => {
-          if (!auth.currentUser) {
-            e.preventDefault();
-            modalLogin.show();
-            aktifkanBlur();
-          }
-        });
-
-        // ======= LOGIN MODAL & FORM =======
-        formLogin.addEventListener("submit", (e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          formLogin.classList.add("was-validated");
-          loginErrorDiv.textContent = "";
-
-          if (!formLogin.checkValidity()) return;
-
-          auth
-            .signInWithEmailAndPassword(
-              loginEmail.value.trim(),
-              loginPassword.value
-            )
-            .then(() => {
-              modalLogin.hide();
-              formLogin.reset();
-              formLogin.classList.remove("was-validated");
-              Swal.fire("Login berhasil", "", "success");
-              adminTab.show();
-            })
-            .catch((err) => {
-              loginErrorDiv.textContent = err.message;
-            });
-        });
-
-        btnCancelLogin.addEventListener("click", () => {
-          modalLogin.hide();
-          daftarTab.show();
-        });
-
-        // Hilangkan blur saat modal login ditutup
-        modalLoginEl.addEventListener("hidden.bs.modal", () => {
-          matikanBlur();
-        });
-
-        // ======= LOGOUT =======
-        btnLogout.onclick = () => {
-          Swal.fire({
-            title: "Anda yakin ingin logout?",
-            icon: "warning",
-            showCancelButton: true,
-            confirmButtonText: "Ya, Logout",
-            cancelButtonText: "Batal",
-            confirmButtonColor: "#d33",
-            cancelButtonColor: "#3085d6",
-          }).then((result) => {
-            if (result.isConfirmed) {
-              auth.signOut();
-              Swal.fire("Logout berhasil", "", "success");
-            }
-          });
-        };
-
-        // ======= AUTH STATE CHANGE HANDLER =======
-        auth.onAuthStateChanged((user) => {
-          if (user) {
-            matikanBlur();
-            btnLogout.classList.remove("d-none");
-            btnTambah.disabled = false;
-            mulaiSnapshotListener();
-
-            const judulAdmin = document.getElementById("judulAdmin");
-            if (judulAdmin) {
-              let namaUser = "Admin";
-              if (user.displayName && user.displayName.trim()) {
-                namaUser = user.displayName;
-              } else if (user.email) {
-                namaUser = user.email.split("@")[0];
-              }
-              judulAdmin.textContent = `Hello ${namaUser}!`;
-            }
-          } else {
-            btnLogout.classList.add("d-none");
-            btnTambah.disabled = true;
-            closeForm();
-            if (unsubscribeProduk) {
-              unsubscribeProduk();
-              unsubscribeProduk = null;
-            }
-            tabelDaftarProduk.innerHTML =
-              '<tr><td colspan="2" class="text-center fst-italic">Silakan login untuk melihat data produk.</td></tr>';
-            tabelAdminProduk.innerHTML =
-              '<tr><td colspan="3" class="text-center fst-italic">Silakan login untuk melihat data produk.</td></tr>';
-
-            const judulAdmin = document.getElementById("judulAdmin");
-            if (judulAdmin) {
-              judulAdmin.textContent = "Hello {User}";
-            }
-
-            if (document.querySelector(".nav-link.active").id === "admin-tab") {
-              daftarTab.show();
-            }
-          }
-        });
-
-        // ======= BARCODE SCANNER WITH html5-qrcode =======
-        if (window.Html5Qrcode) {
-          html5QrcodeScanner = new Html5Qrcode("reader");
-        } else {
-          console.warn("Library html5-qrcode belum dimuat.");
-        }
-
-        function cariProdukByBarcode(code) {
-          if (!code) return null;
-          code = code.trim();
-          if (!Array.isArray(latestProduk)) return null;
-          return latestProduk.find((p) => p.barcode && p.barcode === code);
-        }
-
         function tampilkanHasilScan(code) {
           playBeep();
           const produk = cariProdukByBarcode(code);
           if (produk) {
-            scanResultElement.textContent = `Kode Batang ditemukan: ${
-              produk.nama
-            } — Harga Rp ${produk.harga.toLocaleString("id-ID")}`;
+            scanResultElement.textContent = `${
+              i18nData[currentLanguage].found_product
+            }: ${produk.nama} — Rp ${produk.harga.toLocaleString("id-ID")}`;
             Swal.fire({
               icon: "success",
-              title: "Produk ditemukan",
-              html: `<b>${
-                produk.nama
-              }</b><br/>Harga: Rp ${produk.harga.toLocaleString("id-ID")}`,
+              title: i18nData[currentLanguage].found_product,
+              html: `<b>${produk.nama}</b><br/>Rp ${produk.harga.toLocaleString(
+                "id-ID"
+              )}`,
               timer: 3000,
               showConfirmButton: false,
             });
           } else {
-            scanResultElement.textContent = `Kode batang "${code}" tidak ditemukan.`;
+            scanResultElement.textContent = `${i18nData[
+              currentLanguage
+            ].product_not_found.replace("{code}", code)}`;
             Swal.fire({
               icon: "error",
-              title: "Tidak ditemukan",
-              text: `Produk dengan kode batang "${code}" tidak ditemukan di database.`,
+              title: i18nData[currentLanguage].product_not_found.replace(
+                "{code}",
+                code
+              ),
               timer: 3000,
               showConfirmButton: false,
             });
@@ -875,13 +1274,11 @@
                   btnStopScan.classList.add("d-none");
                   readerElement.style.display = "none";
                 },
-                (errorMessage) => {
-                  // ignore errors silently
-                }
+                (errorMessage) => {}
               )
               .catch((err) => {
                 Swal.fire(
-                  "Error scanner",
+                  i18nData[currentLanguage].loading_failed,
                   "Tidak dapat mengakses kamera: " + err.message,
                   "error"
                 );
@@ -892,7 +1289,6 @@
               });
           }
         };
-
         btnStopScan.onclick = () => {
           if (!scanning) return;
           html5QrcodeScanner
@@ -904,12 +1300,10 @@
               readerElement.style.display = "none";
               scanResultElement.textContent = "";
             })
-            .catch((err) => {
-              console.error(err);
-            });
+            .catch(console.error);
         };
 
-        // ======= BLUR BACKGROUND HANDLERS =======
+        // Blur control
         function aktifkanBlur() {
           overlayBlur.classList.add("active");
         }
@@ -917,8 +1311,50 @@
           overlayBlur.classList.remove("active");
         }
 
-        // ** NO GLOBAL CLICK EVENT TO ACTIVATE BLUR **
-        // Blur only activates on modalLogin show and deactivates on modal hide
+        // No global click listener activating blur
+        // Blur only when modal login is shown, removed when hidden
+
+        // Settings panel toggle (inside admin)
+        btnOpenSettings.addEventListener("click", () => {
+          if (!adminSettings.classList.contains("d-none")) {
+            adminSettings.classList.add("d-none");
+          } else {
+            // Load current settings values
+            settingTitle.value = customTitle;
+            settingLanguage.value = currentLanguage;
+            // settingTheme.value = currentTheme;
+            adminSettings.classList.remove("d-none");
+          }
+        });
+
+        formSettings.addEventListener("submit", (e) => {
+          e.preventDefault();
+          // Save settings
+          updateTitle(settingTitle.value);
+          translatePage(settingLanguage.value);
+        //   applyTheme(settingTheme.value);
+          Swal.fire(
+            currentLanguage === "id" ? "Berhasil" : "Success",
+            currentLanguage === "id"
+              ? "Pengaturan berhasil disimpan."
+              : "Settings successfully saved.",
+            "success"
+          );
+          adminSettings.classList.add("d-none");
+        });
+
+        // Theme toggle button (always visible)
+        // btnToggleTheme.addEventListener("click", () => {
+        //   const newTheme = currentTheme === "dark" ? "light" : "dark";
+        //   applyTheme(newTheme);
+        // });
+
+        // Initialize aria-label/title of theme toggle button
+        btnToggleTheme.setAttribute(
+          "aria-label",
+          i18nData[currentLanguage].toggle_theme
+        );
+        btnToggleTheme.title = i18nData[currentLanguage].toggle_theme;
       })();
     </script>
   </body>
