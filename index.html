@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Ice Cream Shop</title>
+    <title>Ice Cream Shop - Scan Barcode Kamera Belakang</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
     <link href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css" rel="stylesheet" />
     <!-- Firebase SDK -->
@@ -86,6 +86,11 @@
             margin-top: 8px;
             width: 100%;
         }
+
+        #cameraSelect {
+            max-width: 400px;
+            margin-bottom: 12px;
+        }
     </style>
 </head>
 
@@ -125,7 +130,8 @@
 
     <!-- Scanner container -->
     <div id="scannerContainer" class="text-center">
-        <video id="videoPreview"></video>
+        <select id="cameraSelect" aria-label="Pilih kamera" class="form-select"></select>
+        <video id="videoPreview" muted playsinline></video>
         <button class="btn btn-danger mt-3" id="closeScannerBtn">Tutup Scanner</button>
     </div>
 
@@ -133,7 +139,7 @@
     <div class="modal fade" id="modalLogin" tabindex="-1" aria-labelledby="modalLoginLabel" aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content">
-                <form id="formLogin">
+                <form id="formLogin" autocomplete="off">
                     <div class="modal-header">
                         <h5 class="modal-title" id="modalLoginLabel">Login Admin</h5>
                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
@@ -197,7 +203,6 @@
 
                             <!-- Form tambah/edit menu -->
                             <div id="menuFormContainer" class="mt-4 d-none">
-
                                 <button type="button" id="btnScanBarcodeInAdmin" class="btn btn-outline-primary mb-3"
                                     title="Scan barcode produk menggunakan kamera perangkat Anda">
                                     Scan Barcode via Kamera
@@ -288,13 +293,12 @@
         </div>
     </div>
 
-
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
     <script>
         (() => {
-            // Firebase Config: Ganti dengan config projectmu sendiri!
+            // Ganti dengan konfigurasi Firebase Anda sendiri
             const firebaseConfig = {
                 apiKey: "AIzaSyCxqcqiQ81ZxZsbLwDZc1IsgAdou-lD5fo",
                 authDomain: "ice-cream-59969.firebaseapp.com",
@@ -305,27 +309,23 @@
                 measurementId: "G-4Y7LELYKB2"
             };
 
-            // // Initialize Firebase
-            // const app = initializeApp(firebaseConfig);
-            // const analytics = getAnalytics(app);
-
-            // Init Firebase
             firebase.initializeApp(firebaseConfig);
             const auth = firebase.auth();
             const db = firebase.firestore();
 
-            // Elements refs
+            // Elements
             const storeNameEl = document.getElementById('storeName');
             const pageTitleEl = document.getElementById('pageTitle');
             const footerStoreNameEl = document.getElementById('footerStoreName');
             const footerYearEl = document.getElementById('footerYear');
             const menuListEl = document.getElementById('menuList');
             const navLinksEl = document.getElementById('navLinks');
-
             const searchInput = document.getElementById('searchInput');
+
             const scannerContainer = document.getElementById('scannerContainer');
             const videoPreview = document.getElementById('videoPreview');
             const closeScannerBtn = document.getElementById('closeScannerBtn');
+            const cameraSelect = document.getElementById('cameraSelect');
 
             const modalLogin = new bootstrap.Modal(document.getElementById('modalLogin'));
             const modalAdminPanel = new bootstrap.Modal(document.getElementById('modalAdminPanel'));
@@ -357,7 +357,7 @@
             const adminPassword2Input = document.getElementById('adminPassword2');
             const btnScanBarcodeInAdmin = document.getElementById('btnScanBarcodeInAdmin');
 
-            // Firestore references
+            // Firestore refs
             const adminDocRef = db.collection('config').doc('admin');
             const menuCollectionRef = db.collection('menu');
             const siteDocRef = db.collection('config').doc('site');
@@ -368,8 +368,9 @@
             let siteData = null;
             let codeReaderLocal = null;
             let selectedDeviceIdLocal = null;
+            let scanningActive = false; // Tambahan state
 
-            // Utility functions
+            // Utility
             function sanitize(str) {
                 const div = document.createElement('div');
                 div.textContent = str;
@@ -414,7 +415,7 @@
                 });
             }
 
-            // UI Rendering
+            // UI render
             function applyThemeColor() {
                 document.documentElement.style.setProperty('--theme-color', siteData?.themeColor || '#0d6efd');
             }
@@ -678,7 +679,6 @@
 
                 try {
                     if (auth.currentUser && auth.currentUser.email !== email) {
-                        // Perbarui email Firebase Auth
                         await auth.currentUser.updateEmail(email);
                     }
                     if (pass1) {
@@ -768,29 +768,84 @@
                 });
             }
 
-            btnScanBarcodeInAdmin.addEventListener('click', async () => {
+            // --- Kode Scanner Dengan Pilihan Kamera dan Prioritaskan Kamera Belakang ---
+
+            async function populateCameraOptions() {
                 try {
-                    if (!codeReaderLocal) {
-                        codeReaderLocal = new ZXing.BrowserMultiFormatReader();
-                    }
                     const devices = await ZXing.BrowserCodeReader.listVideoInputDevices();
+                    cameraSelect.innerHTML = '';
                     if (devices.length === 0) {
-                        await alertError('Tidak ditemukan kamera perangkat.');
+                        const opt = document.createElement('option');
+                        opt.textContent = 'Tidak ditemukan kamera';
+                        opt.disabled = true;
+                        cameraSelect.appendChild(opt);
+                        selectedDeviceIdLocal = null;
                         return;
                     }
-                    selectedDeviceIdLocal = devices[0].deviceId;
+
+                    // Cari kamera belakang (back, rear, environment) — prioritas
+                    let backCamera = devices.find(d => /back|rear|environment/gi.test(d.label));
+                    if (!backCamera) backCamera = devices[0];
+
+                    devices.forEach(device => {
+                        const option = document.createElement('option');
+                        option.value = device.deviceId;
+                        option.textContent = device.label || ('Camera ' + (cameraSelect.length + 1));
+                        cameraSelect.appendChild(option);
+                    });
+
+                    selectedDeviceIdLocal = backCamera.deviceId;
+                    cameraSelect.value = selectedDeviceIdLocal;
+                } catch (e) {
+                    console.error('Gagal dapatkan perangkat kamera:', e);
+                    cameraSelect.innerHTML = '<option disabled>Tidak dapat akses kamera</option>';
+                    selectedDeviceIdLocal = null;
+                }
+            }
+
+            // Event perubahan kamera oleh user
+            cameraSelect.addEventListener('change', () => {
+                selectedDeviceIdLocal = cameraSelect.value;
+            });
+
+            btnScanBarcodeInAdmin.addEventListener('click', async () => {
+                try {
+                    if (!codeReaderLocal) codeReaderLocal = new ZXing.BrowserBarcodeReader();
+                    await populateCameraOptions();
+
+                    if (!selectedDeviceIdLocal) {
+                        await alertError('Tidak ada kamera yang tersedia.');
+                        return;
+                    }
+
                     scannerContainer.style.display = 'block';
-                    await codeReaderLocal.decodeFromVideoDevice(selectedDeviceIdLocal, videoPreview, (result, err) => {
+                    scanningActive = true;
+
+                    codeReaderLocal.decodeFromVideoDevice(selectedDeviceIdLocal, videoPreview, async (result, err) => {
+                        if (!scanningActive) return;
                         if (result) {
-                            handleBarcodeScanInAdmin(result.getText());
+                            scanningActive = false;
+                            await handleBarcodeScanInAdmin(result.getText());
+                        }
+                        if (err && err.name && err.name !== 'NotFoundException') {
+                            scanningActive = false;
+                            await alertError('Gagal membaca barcode: ' + err.message);
+                            if (codeReaderLocal) await codeReaderLocal.reset();
+                            scannerContainer.style.display = 'none';
                         }
                     });
                 } catch (error) {
-                    await alertError('Gagal membuka kamera: ' + error.message);
+                    let extra = '';
+                    if (window.isSecureContext === false) {
+                        extra = ' (Akses kamera hanya bisa di HTTPS atau localhost, bukan file://)';
+                    }
+                    await alertError('Gagal membuka kamera: ' + error.message + extra);
+                    console.error('Detail error ZXing:', error);
                 }
             });
 
             closeScannerBtn.addEventListener('click', async () => {
+                scanningActive = false;
                 if (codeReaderLocal) {
                     await codeReaderLocal.reset();
                 }
@@ -798,10 +853,15 @@
             });
 
             async function handleBarcodeScanInAdmin(barcodeText) {
+                scanningActive = false;
                 if (codeReaderLocal) {
                     await codeReaderLocal.reset();
                 }
-                scannerContainer.style.display = 'none';
+                // Delay sedikit agar user melihat hasil scan
+                setTimeout(() => {
+                    scannerContainer.style.display = 'none';
+                }, 400);
+
                 menuBarcodeInput.value = barcodeText;
                 await alertSuccess(`Barcode berhasil discan dan diisi: ${sanitize(barcodeText)}`);
             }
@@ -813,6 +873,7 @@
                 renderMenuList();
             }
             init();
+
         })();
     </script>
 </body>
