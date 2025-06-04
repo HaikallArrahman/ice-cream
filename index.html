@@ -1,121 +1,298 @@
 <!DOCTYPE html>
 <html lang="id">
+
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Generator Kode Batang (Barcode)</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      padding: 20px;
-      max-width: 600px;
-      margin: 0 auto;
-      background: #f9f9f9;
-      text-align: center;
-    }
-    h1 {
-      margin-bottom: 20px;
-    }
-    input[type="text"] {
-      padding: 10px;
-      font-size: 1rem;
-      width: calc(100% - 22px);
-      max-width: 400px;
-      margin-bottom: 15px;
-      border: 1px solid #ccc;
-      border-radius: 5px;
-    }
-    button {
-      padding: 10px 25px;
-      font-size: 1rem;
-      background: #007bff;
-      border: none;
-      color: white;
-      border-radius: 5px;
-      cursor: pointer;
-      margin-bottom: 25px;
-    }
-    button:disabled {
-      background: #999;
-      cursor: not-allowed;
-    }
-    svg {
-      margin-top: 15px;
-      border: 1px solid #ccc;
-      padding: 10px;
-      background: white;
-      border-radius: 5px;
-    }
-    #pesan {
-      margin-top: 10px;
-      color: red;
-      font-weight: bold;
-    }
-    @media (max-width: 480px) {
-      input[type="text"] {
-        max-width: 100%;
-      }
-    }
-  </style>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Warung Sembako - Daftar Harga & Admin</title>
+    <link rel="stylesheet" href="style.css" />
 </head>
+
 <body>
-  <h1>Generator Kode Batang (Barcode)</h1>
-  <input type="text" id="inputKode" placeholder="Masukkan teks / angka untuk barcode" maxlength="30" />
-  <br />
-  <button id="btnGenerate">Generate Barcode</button>
-  <div id="pesan"></div>
-  <div>
-    <svg id="barcode"></svg>
-  </div>
-  <a href="/index1.html">halaman 2</a>
-  
 
-  <!-- JsBarcode CDN -->
-  <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
+    <nav role="tablist" aria-label="Navigasi utama">
+        <button id="tabDaftar" class="active" aria-controls="sectionDaftar" aria-selected="true" role="tab"
+            tabindex="0">Daftar Produk</button>
+        <button id="tabAdmin" aria-controls="sectionAdmin" aria-selected="false" role="tab" tabindex="-1">Halaman
+            Admin</button>
+    </nav>
 
-  <script>
-    const inputKode = document.getElementById('inputKode');
-    const btnGenerate = document.getElementById('btnGenerate');
-    const pesan = document.getElementById('pesan');
-    const barcodeSVG = document.getElementById('barcode');
+    <section id="sectionDaftar" class="container" role="tabpanel" aria-labelledby="tabDaftar">
+        <h1>Daftar Harga Warung Sembako</h1>
+        <table aria-label="Daftar harga produk warung sembako" role="grid" id="tableDaftarProduk">
+            <thead>
+                <tr>
+                    <th scope="col">Nama Produk</th>
+                    <th scope="col">Harga (Rp)</th>
+                </tr>
+            </thead>
+            <tbody id="tabelDaftarProduk">
+                <!-- Data produk akan dimuat di sini -->
+            </tbody>
+        </table>
+    </section>
 
-    function generateBarcode() {
-      const value = inputKode.value.trim();
+    <section id="sectionAdmin" class="container" role="tabpanel" aria-labelledby="tabAdmin" hidden>
+        <h1>Halaman Admin</h1>
+        <button id="btnTambah" class="btn-primary" type="button" aria-label="Tambah produk baru">Tambah Produk
+            Baru</button>
 
-      if (!value) {
-        pesan.textContent = "Input tidak boleh kosong!";
-        barcodeSVG.innerHTML = '';
-        return;
-      }
+        <form id="formProduk" hidden aria-label="Form tambah atau edit produk">
+            <label for="inputNama">Nama Produk</label>
+            <input type="text" id="inputNama" name="namaProduk" required autocomplete="off" aria-required="true"
+                aria-describedby="namaHelp" />
+            <span id="namaHelp" class="sr-only">Masukkan nama produk</span>
 
-      // Validasi - cuma angka dan huruf (bisa diubah sesuai kebutuhan)
-      const valid = /^[0-9A-Za-z\-]+$/.test(value);
-      if (!valid) {
-        pesan.textContent = "Input hanya boleh mengandung angka, huruf, dan tanda -";
-        barcodeSVG.innerHTML = '';
-        return;
-      }
+            <label for="inputHarga">Harga (Rp)</label>
+            <input type="number" id="inputHarga" name="hargaProduk" min="0" step="100" required autocomplete="off"
+                aria-required="true" aria-describedby="hargaHelp" />
+            <span id="hargaHelp" class="sr-only">Masukkan harga produk dalam rupiah</span>
 
-      pesan.textContent = "";
+            <button type="submit" class="btn-primary" aria-label="Simpan produk">Simpan</button>
+            <button type="button" id="btnBatal" class="btn-danger"
+                aria-label="Batalkan form input produk">Batal</button>
+        </form>
 
-      JsBarcode("#barcode", value, {
-        format: "code128",
-        lineColor: "#000",
-        width: 2,
-        height: 100,
-        displayValue: true,
-        fontSize: 18
-      });
-    }
+        <table aria-label="Daftar produk di admin" role="grid" id="tableAdminProduk" style="margin-top:20px;">
+            <thead>
+                <tr>
+                    <th scope="col">Nama Produk</th>
+                    <th scope="col">Harga (Rp)</th>
+                    <th scope="col">Aksi</th>
+                </tr>
+            </thead>
+            <tbody id="tabelAdminProduk">
+                <!-- Data produk admin -->
+            </tbody>
+        </table>
+    </section>
 
-    btnGenerate.addEventListener('click', generateBarcode);
+    <script>
+        (function () {
+            // Elemen DOM
+            const tabDaftar = document.getElementById('tabDaftar');
+            const tabAdmin = document.getElementById('tabAdmin');
+            const sectionDaftar = document.getElementById('sectionDaftar');
+            const sectionAdmin = document.getElementById('sectionAdmin');
 
-    // Optional: generate barcode saat tekan Enter pada input
-    inputKode.addEventListener('keypress', function(e) {
-      if(e.key === 'Enter'){
-        generateBarcode();
-      }
-    });
-  </script>
+            const tabelDaftarProduk = document.getElementById('tabelDaftarProduk');
+            const tabelAdminProduk = document.getElementById('tabelAdminProduk');
+
+            const btnTambah = document.getElementById('btnTambah');
+            const formProduk = document.getElementById('formProduk');
+            const inputNama = document.getElementById('inputNama');
+            const inputHarga = document.getElementById('inputHarga');
+            const btnBatal = document.getElementById('btnBatal');
+
+            // State produk array
+            let produkList = [];
+            let modeEdit = false;
+            let editIndex = -1;
+
+            // --- Fungsi Toggle Tab ---
+            function setActiveTab(tab) {
+                if (tab === 'daftar') {
+                    tabDaftar.classList.add('active');
+                    tabDaftar.setAttribute('aria-selected', 'true');
+                    tabDaftar.tabIndex = 0;
+                    tabAdmin.classList.remove('active');
+                    tabAdmin.setAttribute('aria-selected', 'false');
+                    tabAdmin.tabIndex = -1;
+                    sectionDaftar.hidden = false;
+                    sectionAdmin.hidden = true;
+                } else {
+                    tabAdmin.classList.add('active');
+                    tabAdmin.setAttribute('aria-selected', 'true');
+                    tabAdmin.tabIndex = 0;
+                    tabDaftar.classList.remove('active');
+                    tabDaftar.setAttribute('aria-selected', 'false');
+                    tabDaftar.tabIndex = -1;
+                    sectionAdmin.hidden = false;
+                    sectionDaftar.hidden = true;
+                }
+            }
+
+            // --- Fungsi Render Daftar Produk ---
+            function renderDaftarProduk() {
+                if (produkList.length === 0) {
+                    tabelDaftarProduk.innerHTML = '<tr><td colspan="2" style="text-align:center; font-style:italic;">Belum ada produk tersedia.</td></tr>';
+                    return;
+                }
+                tabelDaftarProduk.innerHTML = produkList.map(p => `
+      <tr>
+        <td>${p.nama}</td>
+        <td>Rp ${p.harga.toLocaleString('id-ID')}</td>
+      </tr>
+    `).join('');
+            }
+
+            // --- Fungsi Render Tabel Admin ---
+            function renderAdminProduk() {
+                if (produkList.length === 0) {
+                    tabelAdminProduk.innerHTML = '<tr><td colspan="3" style="text-align:center; font-style:italic;">Belum ada produk tersedia.</td></tr>';
+                    return;
+                }
+                tabelAdminProduk.innerHTML = produkList.map((p, idx) => `
+      <tr data-index="${idx}">
+        <td>${p.nama}</td>
+        <td>Rp ${p.harga.toLocaleString('id-ID')}</td>
+        <td>
+          <button class="btn-edit" type="button" aria-label="Edit produk ${p.nama}">Edit</button>
+          <button class="btn-danger" type="button" aria-label="Hapus produk ${p.nama}">Hapus</button>
+        </td>
+      </tr>
+    `).join('');
+
+                // Pasang event Edit dan Hapus
+                tabelAdminProduk.querySelectorAll('button.btn-edit').forEach(btn => {
+                    btn.onclick = e => {
+                        const idx = Number(btn.closest('tr').dataset.index);
+                        bukaFormEdit(idx);
+                    };
+                });
+                tabelAdminProduk.querySelectorAll('button.btn-danger').forEach(btn => {
+                    btn.onclick = e => {
+                        const idx = Number(btn.closest('tr').dataset.index);
+                        if (confirm('Yakin ingin menghapus produk ini?')) {
+                            hapusProduk(idx);
+                        }
+                    };
+                });
+            }
+
+            // --- Load data dari localStorage ---
+            function loadProduk() {
+                const data = localStorage.getItem('produkSembako');
+                try {
+                    produkList = data ? JSON.parse(data) : [];
+                } catch {
+                    produkList = [];
+                }
+            }
+
+            // --- Simpan data ke localStorage ---
+            function simpanProduk() {
+                localStorage.setItem('produkSembako', JSON.stringify(produkList));
+            }
+
+            // --- Tambah Produk ---
+            function tambahProduk(nama, harga) {
+                produkList.push({ nama, harga });
+                simpanProduk();
+                renderDaftarProduk();
+                renderAdminProduk();
+            }
+
+            // --- Edit Produk ---
+            function editProduk(idx, nama, harga) {
+                if (produkList[idx]) {
+                    produkList[idx] = { nama, harga };
+                    simpanProduk();
+                    renderDaftarProduk();
+                    renderAdminProduk();
+                }
+            }
+
+            // --- Hapus Produk ---
+            function hapusProduk(idx) {
+                produkList.splice(idx, 1);
+                simpanProduk();
+                renderDaftarProduk();
+                renderAdminProduk();
+            }
+
+            // --- Buka Form Tambah Produk ---
+            function bukaFormTambah() {
+                modeEdit = false;
+                editIndex = -1;
+                formProduk.style.display = 'flex';
+                btnTambah.disabled = true;
+                inputNama.value = '';
+                inputHarga.value = '';
+                inputNama.focus();
+            }
+
+            // --- Buka Form Edit Produk ---
+            function bukaFormEdit(idx) {
+                modeEdit = true;
+                editIndex = idx;
+                formProduk.style.display = 'flex';
+                btnTambah.disabled = true;
+                if (produkList[idx]) {
+                    inputNama.value = produkList[idx].nama;
+                    inputHarga.value = produkList[idx].harga;
+                    inputNama.focus();
+                }
+            }
+
+            // --- Tutup Form Produk ---
+            function tutupForm() {
+                formProduk.style.display = 'none';
+                btnTambah.disabled = false;
+                modeEdit = false;
+                editIndex = -1;
+            }
+
+            // --- Event Listener Form Submit ---
+            formProduk.addEventListener('submit', e => {
+                e.preventDefault();
+                const nama = inputNama.value.trim();
+                const harga = Number(inputHarga.value);
+                if (!nama) {
+                    alert('Nama produk wajib diisi!');
+                    return;
+                }
+                if (isNaN(harga) || harga < 0) {
+                    alert('Harga harus berupa angka positif!');
+                    return;
+                }
+                if (modeEdit) {
+                    editProduk(editIndex, nama, harga);
+                } else {
+                    tambahProduk(nama, harga);
+                }
+                tutupForm();
+            });
+
+            // Batal tombol
+            btnBatal.addEventListener('click', e => {
+                e.preventDefault();
+                tutupForm();
+            });
+
+            // Tombol Tambah Produk
+            btnTambah.addEventListener('click', bukaFormTambah);
+
+            // Tab pindah dengan keyboard support (optional)
+            tabDaftar.addEventListener('click', () => setActiveTab('daftar'));
+            tabAdmin.addEventListener('click', () => setActiveTab('admin'));
+
+            // Keyboard arrow key to switch tabs (optional)
+            [tabDaftar, tabAdmin].forEach((tab, idx, arr) => {
+                tab.addEventListener('keydown', e => {
+                    if (e.key === 'ArrowRight') {
+                        arr[(idx + 1) % arr.length].focus();
+                        e.preventDefault();
+                    }
+                    if (e.key === 'ArrowLeft') {
+                        arr[(idx - 1 + arr.length) % arr.length].focus();
+                        e.preventDefault();
+                    }
+                    if (e.key === 'Enter' || e.key === ' ') {
+                        setActiveTab(tab.id === 'tabDaftar' ? 'daftar' : 'admin');
+                        e.preventDefault();
+                    }
+                });
+            });
+
+            // Inisialisasi data dan UI
+            loadProduk();
+            renderDaftarProduk();
+            renderAdminProduk();
+            setActiveTab('daftar');
+        })();
+    </script>
+
 </body>
+
 </html>
