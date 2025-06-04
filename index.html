@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Scan Kode Batang & Tampilkan Data</title>
+    <title>Scan Kode Batang & Ambil Data Internet</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -37,9 +37,12 @@
             border-radius: 8px;
             box-shadow: 0 0 10px rgba(0,0,0,0.1);
             text-align: left;
+            display:none;
         }
-        #dataProduk h2 {
-            margin-top: 0;
+        #dataProduk img {
+            max-width: 150px;
+            display: block;
+            margin-bottom: 10px;
         }
         button {
             margin-top: 15px;
@@ -55,10 +58,14 @@
             background-color: #999;
             cursor: not-allowed;
         }
+        a.produk-link {
+            color: #0066cc;
+            word-break: break-word;
+        }
     </style>
 </head>
 <body>
-    <h1>Scan Kode Batang & Tampilkan Data</h1>
+    <h1>Scan Kode Batang & Ambil Data Internet</h1>
 
     <div id="interactive">
         <video autoplay muted playsinline></video>
@@ -66,12 +73,14 @@
     <div id="hasil">Arahkan kamera ke kode batang...</div>
     <button id="mulaiScan">Mulai Scan</button>
 
-    <div id="dataProduk" style="display:none;">
+    <div id="dataProduk">
         <h2>Detail Produk</h2>
+        <img id="gambarProduk" alt="Gambar Produk"/>
         <p><strong>Kode:</strong> <span id="kodeProduk"></span></p>
         <p><strong>Nama:</strong> <span id="namaProduk"></span></p>
         <p><strong>Deskripsi:</strong> <span id="deskripsiProduk"></span></p>
-        <p><strong>Harga:</strong> Rp <span id="hargaProduk"></span></p>
+        <p><strong>Harga:</strong> <span id="hargaProduk"></span></p>
+        <p><strong>Link Produk:</strong> <a href="#" id="linkProduk" target="_blank" class="produk-link">Buka di situs</a></p>
     </div>
 
     <!-- QuaggaJS CDN -->
@@ -81,45 +90,84 @@
         const hasilElement = document.getElementById('hasil');
         const mulaiScanBtn = document.getElementById('mulaiScan');
         const dataProdukDiv = document.getElementById('dataProduk');
+        const gambarProdukImg = document.getElementById('gambarProduk');
         const kodeProdukSpan = document.getElementById('kodeProduk');
         const namaProdukSpan = document.getElementById('namaProduk');
         const deskripsiProdukSpan = document.getElementById('deskripsiProduk');
         const hargaProdukSpan = document.getElementById('hargaProduk');
-
-        // Contoh data produk simulasi (kode_barcode: data produk)
-        const databaseProduk = {
-            "8901234567890": {
-                nama: "Minuman Soda 500ml",
-                deskripsi: "Minuman soda segar dengan rasa cola klasik.",
-                harga: 12000
-            },
-            "8998765432101": {
-                nama: "Biskuit Coklat",
-                deskripsi: "Biskuit renyah dengan taburan coklat.",
-                harga: 8000
-            },
-            "1234567890128": {
-                nama: "Susu UHT 1L",
-                deskripsi: "Susu segar kaya kalsium, aman dikonsumsi seluruh keluarga.",
-                harga: 15000
-            }
-            // Tambahkan data produk lain sesuai kebutuhan
-        };
+        const linkProdukAnchor = document.getElementById('linkProduk');
 
         let scanning = false;
 
-        function tampilkanDataProduk(kode) {
-            const produk = databaseProduk[kode];
-            if (produk) {
-                kodeProdukSpan.textContent = kode;
-                namaProdukSpan.textContent = produk.nama;
-                deskripsiProdukSpan.textContent = produk.deskripsi;
-                hargaProdukSpan.textContent = produk.harga.toLocaleString('id-ID');
-                dataProdukDiv.style.display = 'block';
-            } else {
-                dataProdukDiv.style.display = 'none';
-                hasilElement.textContent = `Kode batang ${kode} tidak ditemukan di database.`;
+        // Fungsi untuk fetch data produk dari API UPCitemdb
+        async function fetchDataProduk(barcode) {
+            hasilElement.textContent = "Mencari data produk di internet...";
+            dataProdukDiv.style.display = 'none';
+
+            // Endpoint query API UPCitemdb
+            // Catatan: API gratis memiliki limit rate, gunakan dengan bijak
+            // URL API: https://api.upcitemdb.com/prod/trial/lookup?upc=...
+            // Tidak perlu API key untuk endpoint trial ini
+
+            const url = `https://api.upcitemdb.com/prod/trial/lookup?upc=${barcode}`;
+
+            try {
+                const response = await fetch(url);
+
+                if (!response.ok) {
+                    throw new Error('Gagal menghubungi server API');
+                }
+
+                const data = await response.json();
+
+                if (data && data.code === 'OK' && data.total > 0) {
+                    const item = data.items[0]; // ambil data produk pertama
+                    return {
+                        kode: barcode,
+                        nama: item.title || 'Tidak ada nama produk',
+                        deskripsi: item.description || 'Tidak ada deskripsi produk tersedia',
+                        harga: item.offers && item.offers[0] ? item.offers[0].price + ' ' + item.offers[0].currency : 'Harga tidak tersedia',
+                        gambar: item.images && item.images[0] ? item.images[0] : '',
+                        link: item.offers && item.offers[0] && item.offers[0].link ? item.offers[0].link : ''
+                    };
+                } else {
+                    return null;
+                }
+
+            } catch (error) {
+                console.error(error);
+                hasilElement.textContent = "Terjadi kesalahan saat mengambil data produk.";
+                return null;
             }
+        }
+
+        function tampilkanDataProdukInternet(produk) {
+            if (!produk) {
+                hasilElement.textContent = `Tidak ditemukan data untuk kode batang tersebut.`;
+                dataProdukDiv.style.display = 'none';
+                return;
+            }
+
+            kodeProdukSpan.textContent = produk.kode;
+            namaProdukSpan.textContent = produk.nama;
+            deskripsiProdukSpan.textContent = produk.deskripsi;
+            hargaProdukSpan.textContent = produk.harga;
+            if (produk.gambar) {
+                gambarProdukImg.src = produk.gambar;
+                gambarProdukImg.style.display = 'block';
+            } else {
+                gambarProdukImg.style.display = 'none';
+            }
+
+            if (produk.link) {
+                linkProdukAnchor.href = produk.link;
+                linkProdukAnchor.style.display = 'inline';
+            } else {
+                linkProdukAnchor.style.display = 'none';
+            }
+
+            dataProdukDiv.style.display = 'block';
+            hasilElement.textContent = "Data produk berhasil ditemukan.";
         }
 
         function mulaiScan() {
@@ -166,18 +214,18 @@
                 hasilElement.textContent = "Silakan arahkan kamera ke kode batang...";
             });
 
-            Quagga.onDetected(function(result) {
+            Quagga.onDetected(async function(result) {
                 if(result && result.codeResult && result.codeResult.code){
                     const code = result.codeResult.code;
-                    // Tampilkan kode terlebih dahulu
                     hasilElement.textContent = "Kode terdeteksi: " + code;
-
-                    // Ambil data produk & tampilkan otomatis
-                    tampilkanDataProduk(code);
 
                     Quagga.stop();
                     scanning = false;
                     mulaiScanBtn.disabled = false;
+
+                    // Ambil data dari internet dan tampilkan
+                    const produk = await fetchDataProduk(code);
+                    tampilkanDataProdukInternet(produk);
                 }
             });
         }
