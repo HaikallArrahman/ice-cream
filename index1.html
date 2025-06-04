@@ -3,12 +3,12 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Scan Kode Batang & Daftar Harga Produk</title>
+  <title>Scan Barcode & Database Produk Otomatis</title>
   <style>
     body {
       font-family: Arial, sans-serif;
       padding: 20px;
-      background: #f5f5f5;
+      background: #f8f8f8;
       text-align: center;
     }
     #interactive {
@@ -27,34 +27,20 @@
       min-height: 40px;
       color: #333;
     }
-    #daftarHarga {
+    #dataProduk {
       margin-top: 20px;
       max-width: 600px;
       margin-left: auto;
       margin-right: auto;
       background: #fff;
       border-radius: 8px;
-      box-shadow: 0 0 10px rgba(0,0,0,0.1);
       padding: 20px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
       text-align: left;
-      display: none;
+      display:none;
     }
-    #daftarHarga h2 {
+    #dataProduk h2 {
       margin-top: 0;
-      margin-bottom: 15px;
-      color: #0066cc;
-    }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-    }
-    th, td {
-      text-align: left;
-      padding: 8px;
-      border-bottom: 1px solid #ddd;
-    }
-    th {
-      background-color: #f2f2f2;
     }
     button {
       margin-top: 20px;
@@ -74,7 +60,7 @@
 </head>
 <body>
 
-  <h1>Scan Kode Batang & Daftar Harga Produk</h1>
+  <h1>Scan Kode Batang & Data Produk Otomatis</h1>
 
   <div id="interactive">
     <video autoplay muted playsinline></video>
@@ -83,137 +69,105 @@
   <div id="hasil">Arahkan kamera ke kode batang produk</div>
   <button id="startScan">Mulai Scan</button>
 
-  <div id="daftarHarga">
-    <h2>Produk Terbaca</h2>
-    <table>
-      <thead>
-        <tr><th>Kode Barang</th><th>Nama Produk</th><th>Harga (Rp)</th></tr>
-      </thead>
-      <tbody id="tabelProdukBody"></tbody>
-    </table>
+  <div id="dataProduk">
+    <h2>Detail Produk</h2>
+    <p><strong>Kode Barang:</strong> <span id="kodeProduk"></span></p>
+    <p><strong>Nama Produk:</strong> <span id="namaProduk"></span></p>
+    <p><strong>Harga:</strong> Rp <span id="hargaProduk"></span></p>
   </div>
-  <a href="/index.html">halaman 1</a>
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/quagga/0.12.1/quagga.min.js"></script>
   <script>
     const startScanBtn = document.getElementById('startScan');
     const hasilElement = document.getElementById('hasil');
-    const daftarHargaDiv = document.getElementById('daftarHarga');
-    const tabelProdukBody = document.getElementById('tabelProdukBody');
+    const dataProdukDiv = document.getElementById('dataProduk');
+    const kodeProdukSpan = document.getElementById('kodeProduk');
+    const namaProdukSpan = document.getElementById('namaProduk');
+    const hargaProdukSpan = document.getElementById('hargaProduk');
 
-    // Database produk lokal
-    const databaseProduk = {
-      "8999999000012": {nama: "Kopi Luwak Asli", harga: 120000},
-      "8999999000029": {nama: "Sambal Terasi ABC", harga: 15000},
-      "8999999000036": {nama: "Kerupuk Udang", harga: 12000},
-      "8999999000043": {nama: "Tempe Mendoan", harga: 8000},
-      "1234567890123": {nama: "Minuman Soda 500ml", harga: 12000},
-      "9876543210987": {nama: "Biskuit Coklat", harga: 8000},
-      "1122334455667": {nama: "Susu UHT 1L", harga: 15000}
-    };
-
+    let databaseProduk = {};
     let scanning = false;
-    // Simpan produk yang sudah discan agar list unique
-    const produkTerscan = {};
+
+    // Ambil database produk dari produk.json
+    async function loadDatabaseProduk() {
+      try {
+        const response = await fetch('produk.json');
+        if (!response.ok)
+          throw new Error('Tidak dapat memuat database produk.');
+        const data = await response.json();
+        databaseProduk = data;
+        hasilElement.textContent = "Database produk berhasil dimuat. Klik Mulai Scan.";
+      } catch(error) {
+        hasilElement.textContent = "Gagal memuat data produk: " + error.message;
+      }
+    }
 
     function mulaiScan() {
       if(scanning) return;
+
+      if (!databaseProduk || Object.keys(databaseProduk).length === 0) {
+        hasilElement.textContent = "Database produk belum dimuat, silakan refresh halaman.";
+        return;
+      }
+
       hasilElement.textContent = "Mempersiapkan scanner...";
       startScanBtn.disabled = true;
-      daftarHargaDiv.style.display = 'block';
+      dataProdukDiv.style.display = 'none';
 
-      if(!Quagga.initialized){
-        Quagga.init({
-          inputStream: {
-            name: 'Live',
-            type: 'LiveStream',
-            target: document.querySelector('#interactive'),
-            constraints: {
-              facingMode: 'environment'
-            }
-          },
-          decoder: {
-            readers: [
-              "code_128_reader",
-              "ean_reader",
-              "ean_8_reader",
-              "upc_reader",
-              "upc_e_reader",
-              "code_39_reader"
-            ]
-          },
-          locate: true
-        }, function(err){
-          if(err){
-            console.error(err);
-            hasilElement.textContent = "Gagal memulai scanner: "+err.message;
-            startScanBtn.disabled = false;
-            return;
+      Quagga.init({
+        inputStream: {
+          name: 'Live',
+          type: 'LiveStream',
+          target: document.querySelector('#interactive'),
+          constraints: {
+            facingMode: 'environment'
           }
-          Quagga.initialized = true;
-          Quagga.start();
-          scanning = true;
-          hasilElement.textContent = "Scan dimulai. Arahkan kamera ke kode batang.";
-        });
-      } else {
+        },
+        decoder: {
+          readers: ["code_128_reader", "ean_reader", "ean_8_reader", "upc_reader", "upc_e_reader"]
+        },
+        locate: true
+      }, function(err){
+        if(err){
+          console.error(err);
+          hasilElement.textContent = "Gagal memulai scanner: "+err.message;
+          startScanBtn.disabled = false;
+          return;
+        }
         Quagga.start();
         scanning = true;
-        hasilElement.textContent = "Scan dimulai. Arahkan kamera ke kode batang.";
-      }
-    }
+        hasilElement.textContent = "Scanner aktif, arahkan kamera ke kode batang...";
+      });
 
-    // Fungsi ketika barcode terdeteksi
-    Quagga.onDetected(function(result){
-      if(result && result.codeResult && result.codeResult.code){
-        const code = result.codeResult.code;
-        if(!produkTerscan[code]){
-          produkTerscan[code] = true;
+      Quagga.onDetected(function(result){
+        if(result && result.codeResult && result.codeResult.code){
+          const code = result.codeResult.code;
           hasilElement.textContent = "Kode terdeteksi: " + code;
-          tambahProdukKeTabel(code);
+          Quagga.stop();
+          scanning = false;
+          startScanBtn.disabled = false;
+          tampilkanDataProduk(code);
         }
-      }
-    });
+      });
+    }
 
-    function tambahProdukKeTabel(kode){
+    function tampilkanDataProduk(kode) {
       const produk = databaseProduk[kode];
-      if(produk){
-        const tr = document.createElement('tr');
-
-        const tdKode = document.createElement('td');
-        tdKode.textContent = kode;
-        tr.appendChild(tdKode);
-
-        const tdNama = document.createElement('td');
-        tdNama.textContent = produk.nama;
-        tr.appendChild(tdNama);
-
-        const tdHarga = document.createElement('td');
-        tdHarga.textContent = produk.harga.toLocaleString('id-ID');
-        tr.appendChild(tdHarga);
-
-        tabelProdukBody.appendChild(tr);
+      if (produk) {
+        kodeProdukSpan.textContent = kode;
+        namaProdukSpan.textContent = produk.nama;
+        hargaProdukSpan.textContent = produk.harga.toLocaleString('id-ID');
+        dataProdukDiv.style.display = 'block';
       } else {
-        hasilElement.textContent = `Kode ${kode} tidak ditemukan dalam database.`;
+        dataProdukDiv.style.display = 'none';
+        hasilElement.textContent = `Produk dengan kode ${kode} tidak ditemukan dalam database.`;
       }
     }
 
-    startScanBtn.addEventListener('click', () => {
-      // Reset dulu produk hasil scan ekse saat mulai scan baru
-      produksiReset();
-      mulaiScan();
-    });
+    startScanBtn.addEventListener('click', mulaiScan);
 
-    function produksiReset(){
-      // Reset produk terscan dan hapus isi tabel
-      for (const key in produkTerscan) {
-        if(produkTerscan.hasOwnProperty(key)){
-          delete produkTerscan[key];
-        }
-      }
-      tabelProdukBody.innerHTML = '';
-      daftarHargaDiv.style.display = 'none';
-      hasilElement.textContent = "Arahkan kamera ke kode batang produk";
-    }
+    // Load database produk saat halaman dibuka
+    loadDatabaseProduk();
   </script>
 </body>
 </html>
