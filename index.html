@@ -1,298 +1,733 @@
 <!DOCTYPE html>
 <html lang="id">
-
-<head>
+  <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Warung Sembako - Daftar Harga & Admin</title>
-    <link rel="stylesheet" href="style.css" />
-</head>
+    <title>
+      Warung Sembako - Admin dengan Firestore, Auth & Barcode Scanner
+    </title>
+    <!-- Bootstrap 5 -->
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <!-- SweetAlert2 -->
+    <link
+      href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css"
+      rel="stylesheet"
+    />
+    <style>
+      body {
+        background: linear-gradient(135deg, #c3e7f7 0%, #fff 100%);
+        min-height: 100vh;
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        color: #33475b;
+        padding: 30px 15px 50px;
+      }
+      .container {
+        max-width: 900px;
+        background: #fefefe;
+        padding: 35px 40px;
+        border-radius: 16px;
+        box-shadow: 0 14px 40px rgba(0, 0, 0, 0.1),
+          0 8px 20px rgba(0, 0, 0, 0.07);
+      }
+      nav button.nav-link.active {
+        background: linear-gradient(135deg, #1962d0 0%, #0d3d81 100%);
+        color: white !important;
+      }
+      #btnLogout {
+        position: fixed;
+        top: 15px;
+        right: 25px;
+        z-index: 1051;
+      }
+      .table thead {
+        background: #2980b9;
+        color: #fff;
+      }
+      .table tbody tr {
+        background: #f4faff;
+        border-radius: 12px;
+      }
+      .table {
+        border-collapse: separate !important;
+        border-spacing: 0 10px !important;
+      }
+      #reader {
+        width: 300px;
+        margin: 15px auto 0;
+      }
+      #scanResult {
+        text-align: center;
+        margin-top: 10px;
+        font-weight: 700;
+        color: #1962d0;
+      }
+    </style>
+  </head>
+  <body>
+    <button id="btnLogout" class="btn btn-danger d-none">Logout</button>
 
-<body>
+    <div class="container">
+      <ul class="nav nav-tabs mb-4" id="tabNav" role="tablist">
+        <li class="nav-item" role="presentation">
+          <button
+            class="nav-link active"
+            id="daftar-tab"
+            data-bs-toggle="tab"
+            data-bs-target="#daftar"
+            type="button"
+            role="tab"
+            aria-controls="daftar"
+            aria-selected="true"
+          >
+            Daftar Produk
+          </button>
+        </li>
+        <li class="nav-item" role="presentation">
+          <button
+            class="nav-link"
+            id="admin-tab"
+            data-bs-toggle="tab"
+            data-bs-target="#admin"
+            type="button"
+            role="tab"
+            aria-controls="admin"
+            aria-selected="false"
+          >
+            Halaman Admin
+          </button>
+        </li>
+      </ul>
 
-    <nav role="tablist" aria-label="Navigasi utama">
-        <button id="tabDaftar" class="active" aria-controls="sectionDaftar" aria-selected="true" role="tab"
-            tabindex="0">Daftar Produk</button>
-        <button id="tabAdmin" aria-controls="sectionAdmin" aria-selected="false" role="tab" tabindex="-1">Halaman
-            Admin</button>
-    </nav>
-
-    <section id="sectionDaftar" class="container" role="tabpanel" aria-labelledby="tabDaftar">
-        <h1>Daftar Harga Warung Sembako</h1>
-        <table aria-label="Daftar harga produk warung sembako" role="grid" id="tableDaftarProduk">
-            <thead>
+      <div class="tab-content" id="tabContent">
+        <div
+          class="tab-pane fade show active"
+          id="daftar"
+          role="tabpanel"
+          aria-labelledby="daftar-tab"
+        >
+          <h1 class="h3 text-center mb-3 text-primary">
+            Daftar Harga Warung Sembako
+          </h1>
+          <div class="table-responsive">
+            <table
+              class="table table-striped table-bordered align-middle"
+              aria-label="Daftar Harga Produk"
+            >
+              <thead>
                 <tr>
-                    <th scope="col">Nama Produk</th>
-                    <th scope="col">Harga (Rp)</th>
+                  <th>Nama Produk</th>
+                  <th>Harga (Rp)</th>
                 </tr>
-            </thead>
-            <tbody id="tabelDaftarProduk">
-                <!-- Data produk akan dimuat di sini -->
-            </tbody>
-        </table>
-    </section>
+              </thead>
+              <tbody id="tabelDaftarProduk">
+                <tr>
+                  <td colspan="2" class="text-center fst-italic">
+                    Sedang memuat data...
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="text-center mt-3 mb-4">
+            <button id="btnScanBarcode" class="btn btn-outline-primary">
+              Scan Kode Batang
+            </button>
+            <button id="btnStopScan" class="btn btn-outline-danger d-none">
+              Stop Scan
+            </button>
+          </div>
+          <div id="reader" style="display: none"></div>
+          <div id="scanResult"></div>
+        </div>
 
-    <section id="sectionAdmin" class="container" role="tabpanel" aria-labelledby="tabAdmin" hidden>
-        <h1>Halaman Admin</h1>
-        <button id="btnTambah" class="btn-primary" type="button" aria-label="Tambah produk baru">Tambah Produk
-            Baru</button>
+        <div
+          class="tab-pane fade"
+          id="admin"
+          role="tabpanel"
+          aria-labelledby="admin-tab"
+          tabindex="0"
+        >
+          <h1 class="h3 text-center mb-3 text-primary">Halaman Admin</h1>
+          <button id="btnTambah" class="btn btn-primary mb-3" disabled>
+            Tambah Produk Baru
+          </button>
 
-        <form id="formProduk" hidden aria-label="Form tambah atau edit produk">
-            <label for="inputNama">Nama Produk</label>
-            <input type="text" id="inputNama" name="namaProduk" required autocomplete="off" aria-required="true"
-                aria-describedby="namaHelp" />
-            <span id="namaHelp" class="sr-only">Masukkan nama produk</span>
+          <form id="formProduk" class="row g-3 d-none" novalidate>
+            <div class="col-md-6">
+              <label for="inputNama" class="form-label">Nama Produk</label>
+              <input
+                type="text"
+                class="form-control"
+                id="inputNama"
+                required
+                autocomplete="off"
+              />
+              <div class="invalid-feedback">Mohon isi nama produk.</div>
+            </div>
+            <div class="col-md-6">
+              <label for="inputHarga" class="form-label">Harga (Rp)</label>
+              <input
+                type="number"
+                class="form-control"
+                id="inputHarga"
+                min="0"
+                step="100"
+                required
+                autocomplete="off"
+              />
+              <div class="invalid-feedback">
+                Mohon isi harga produk yang valid.
+              </div>
+            </div>
+            <div class="col-md-12">
+              <label for="inputBarcode" class="form-label"
+                >Kode Batang (Barcode)</label
+              >
+              <input
+                type="text"
+                class="form-control"
+                id="inputBarcode"
+                autocomplete="off"
+                placeholder="Masukkan kode batang atau scan"
+              />
+              <small class="form-text text-muted"
+                >Kode batang ini digunakan untuk pencarian dengan scan.</small
+              >
+            </div>
+            <div class="col-12 d-flex gap-2 justify-content-end">
+              <button type="submit" class="btn btn-primary">Simpan</button>
+              <button type="button" class="btn btn-danger" id="btnBatal">
+                Batal
+              </button>
+            </div>
+          </form>
 
-            <label for="inputHarga">Harga (Rp)</label>
-            <input type="number" id="inputHarga" name="hargaProduk" min="0" step="100" required autocomplete="off"
-                aria-required="true" aria-describedby="hargaHelp" />
-            <span id="hargaHelp" class="sr-only">Masukkan harga produk dalam rupiah</span>
+          <div class="table-responsive">
+            <table class="table table-striped table-bordered align-middle">
+              <thead>
+                <tr>
+                  <th>Nama Produk</th>
+                  <th>Harga (Rp)</th>
+                  <th>Aksi</th>
+                </tr>
+              </thead>
+              <tbody id="tabelAdminProduk">
+                <tr>
+                  <td colspan="3" class="text-center fst-italic">
+                    Sedang memuat data...
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
 
-            <button type="submit" class="btn-primary" aria-label="Simpan produk">Simpan</button>
-            <button type="button" id="btnBatal" class="btn-danger"
-                aria-label="Batalkan form input produk">Batal</button>
+    <!-- Modal Login -->
+    <div
+      class="modal fade"
+      id="modalLogin"
+      data-bs-backdrop="static"
+      data-bs-keyboard="false"
+      tabindex="-1"
+      aria-labelledby="modalLoginLabel"
+      aria-hidden="true"
+    >
+      <div class="modal-dialog modal-dialog-centered">
+        <form class="modal-content needs-validation" id="formLogin" novalidate>
+          <div class="modal-header">
+            <h5 class="modal-title" id="modalLoginLabel">Login Admin</h5>
+          </div>
+          <div class="modal-body">
+            <div class="mb-3">
+              <label for="loginEmail" class="form-label">Email</label>
+              <input
+                type="email"
+                class="form-control"
+                id="loginEmail"
+                required
+                autocomplete="username"
+              />
+              <div class="invalid-feedback">
+                Mohon masukkan email yang valid.
+              </div>
+            </div>
+            <div class="mb-3">
+              <label for="loginPassword" class="form-label">Password</label>
+              <input
+                type="password"
+                class="form-control"
+                id="loginPassword"
+                required
+                autocomplete="current-password"
+              />
+              <div class="invalid-feedback">Mohon masukkan password.</div>
+            </div>
+            <div class="text-danger" id="loginError" aria-live="polite"></div>
+          </div>
+          <div class="modal-footer">
+            <button type="submit" class="btn btn-primary w-100">Login</button>
+          </div>
         </form>
+      </div>
+    </div>
 
-        <table aria-label="Daftar produk di admin" role="grid" id="tableAdminProduk" style="margin-top:20px;">
-            <thead>
-                <tr>
-                    <th scope="col">Nama Produk</th>
-                    <th scope="col">Harga (Rp)</th>
-                    <th scope="col">Aksi</th>
-                </tr>
-            </thead>
-            <tbody id="tabelAdminProduk">
-                <!-- Data produk admin -->
-            </tbody>
-        </table>
-    </section>
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    <!-- Bootstrap Bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- SweetAlert2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <!-- Html5 QR Code (barcode scanner) -->
+    <script
+      src="https://unpkg.com/html5-qrcode"
+      type="text/javascript"
+    ></script>
 
     <script>
-        (function () {
-            // Elemen DOM
-            const tabDaftar = document.getElementById('tabDaftar');
-            const tabAdmin = document.getElementById('tabAdmin');
-            const sectionDaftar = document.getElementById('sectionDaftar');
-            const sectionAdmin = document.getElementById('sectionAdmin');
+      (() => {
+        // === KONFIGURASI FIREBASE - GANTI SESUAI PROJECT ANDA ===
+        const firebaseConfig = {
+          apiKey: "AIzaSyD9qhbGRUuKne_6UG_FBO7PwRyakqGO0eE",
+          authDomain: "warung-sh-cellular.firebaseapp.com",
+          projectId: "warung-sh-cellular",
+          storageBucket: "warung-sh-cellular.firebasestorage.app",
+          messagingSenderId: "361126163338",
+          appId: "1:361126163338:web:22eabb207d112d261d0e73",
+          measurementId: "G-X3QY8GXKND",
+        };
+        firebase.initializeApp(firebaseConfig);
 
-            const tabelDaftarProduk = document.getElementById('tabelDaftarProduk');
-            const tabelAdminProduk = document.getElementById('tabelAdminProduk');
+        const auth = firebase.auth();
+        const db = firebase.firestore();
 
-            const btnTambah = document.getElementById('btnTambah');
-            const formProduk = document.getElementById('formProduk');
-            const inputNama = document.getElementById('inputNama');
-            const inputHarga = document.getElementById('inputHarga');
-            const btnBatal = document.getElementById('btnBatal');
+        // ======= ELEMENTS =======
+        const daftarTabBtn = document.getElementById("daftar-tab");
+        const adminTabBtn = document.getElementById("admin-tab");
+        const btnLogout = document.getElementById("btnLogout");
 
-            // State produk array
-            let produkList = [];
-            let modeEdit = false;
-            let editIndex = -1;
+        const tabelDaftarProduk = document.getElementById("tabelDaftarProduk");
+        const tabelAdminProduk = document.getElementById("tabelAdminProduk");
 
-            // --- Fungsi Toggle Tab ---
-            function setActiveTab(tab) {
-                if (tab === 'daftar') {
-                    tabDaftar.classList.add('active');
-                    tabDaftar.setAttribute('aria-selected', 'true');
-                    tabDaftar.tabIndex = 0;
-                    tabAdmin.classList.remove('active');
-                    tabAdmin.setAttribute('aria-selected', 'false');
-                    tabAdmin.tabIndex = -1;
-                    sectionDaftar.hidden = false;
-                    sectionAdmin.hidden = true;
-                } else {
-                    tabAdmin.classList.add('active');
-                    tabAdmin.setAttribute('aria-selected', 'true');
-                    tabAdmin.tabIndex = 0;
-                    tabDaftar.classList.remove('active');
-                    tabDaftar.setAttribute('aria-selected', 'false');
-                    tabDaftar.tabIndex = -1;
-                    sectionAdmin.hidden = false;
-                    sectionDaftar.hidden = true;
+        const btnTambah = document.getElementById("btnTambah");
+        const formProduk = document.getElementById("formProduk");
+        const inputNama = document.getElementById("inputNama");
+        const inputHarga = document.getElementById("inputHarga");
+        const inputBarcode = document.getElementById("inputBarcode");
+        const btnBatal = document.getElementById("btnBatal");
+
+        // Login modal form
+        const modalLoginEl = document.getElementById("modalLogin");
+        const modalLogin = new bootstrap.Modal(modalLoginEl, {
+          keyboard: false,
+        });
+        const formLogin = document.getElementById("formLogin");
+        const loginEmail = document.getElementById("loginEmail");
+        const loginPassword = document.getElementById("loginPassword");
+        const loginErrorDiv = document.getElementById("loginError");
+
+        // Scanner elements
+        const btnScanBarcode = document.getElementById("btnScanBarcode");
+        const btnStopScan = document.getElementById("btnStopScan");
+        const readerElement = document.getElementById("reader");
+        const scanResultElement = document.getElementById("scanResult");
+
+        // ======= VARIABLES =======
+        let modeEdit = false;
+        let editId = null; // Firestore document id
+        let produkCache = [];
+        let latestProduk = produkCache; // global for scanner search
+
+        // Scanner instance and state
+        let html5QrcodeScanner = null;
+        let scanning = false;
+
+        // ======= FIRESTORE REALTIME LISTENER =======
+        let unsubscribeProduk = null;
+
+        function mulaiSnapshotListener() {
+          if (unsubscribeProduk) unsubscribeProduk();
+          unsubscribeProduk = db
+            .collection("produk")
+            .orderBy("nama")
+            .onSnapshot(
+              (snapshot) => {
+                const items = [];
+                snapshot.forEach((doc) =>
+                  items.push({ id: doc.id, ...doc.data() })
+                );
+                produkCache = items;
+                latestProduk = produkCache;
+                renderDaftarProduk(items);
+                renderAdminProduk(items);
+              },
+              (error) => {
+                // Jika error permission karena logout, abaikan saja (tidak tampil alert)
+                if (auth.currentUser) {
+                  Swal.fire(
+                    "Error",
+                    "Gagal memuat data produk: " + error.message,
+                    "error"
+                  );
                 }
-            }
-
-            // --- Fungsi Render Daftar Produk ---
-            function renderDaftarProduk() {
-                if (produkList.length === 0) {
-                    tabelDaftarProduk.innerHTML = '<tr><td colspan="2" style="text-align:center; font-style:italic;">Belum ada produk tersedia.</td></tr>';
-                    return;
+                // Hentikan listener kalau error
+                if (unsubscribeProduk) {
+                  unsubscribeProduk();
+                  unsubscribeProduk = null;
                 }
-                tabelDaftarProduk.innerHTML = produkList.map(p => `
+                // Bersihkan tabel data agar tidak menampilkan data lama
+                tabelDaftarProduk.innerHTML = `<tr><td colspan="2" class="text-center fst-italic">Tidak dapat memuat data.</td></tr>`;
+                tabelAdminProduk.innerHTML = `<tr><td colspan="3" class="text-center fst-italic">Tidak dapat memuat data.</td></tr>`;
+              }
+            );
+        }
+
+        // ======= RENDER DAFTAR PRODUK =======
+        function renderDaftarProduk(items) {
+          produkCache = items;
+          latestProduk = produkCache;
+          if (items.length === 0) {
+            tabelDaftarProduk.innerHTML = `<tr><td colspan="2" class="text-center fst-italic">Belum ada produk tersedia.</td></tr>`;
+            return;
+          }
+          tabelDaftarProduk.innerHTML = items
+            .map(
+              (p) => `
       <tr>
-        <td>${p.nama}</td>
-        <td>Rp ${p.harga.toLocaleString('id-ID')}</td>
+        <td>${p.nama} ${
+                p.barcode
+                  ? `<small class="text-muted">[${p.barcode}]</small>`
+                  : ""
+              }</td>
+        <td>Rp ${p.harga.toLocaleString("id-ID")}</td>
       </tr>
-    `).join('');
-            }
+    `
+            )
+            .join("");
+        }
 
-            // --- Fungsi Render Tabel Admin ---
-            function renderAdminProduk() {
-                if (produkList.length === 0) {
-                    tabelAdminProduk.innerHTML = '<tr><td colspan="3" style="text-align:center; font-style:italic;">Belum ada produk tersedia.</td></tr>';
-                    return;
-                }
-                tabelAdminProduk.innerHTML = produkList.map((p, idx) => `
-      <tr data-index="${idx}">
+        // ======= RENDER HALAMAN ADMIN PRODUK =======
+        function renderAdminProduk(items) {
+          produkCache = items;
+          latestProduk = produkCache;
+          if (items.length === 0) {
+            tabelAdminProduk.innerHTML = `<tr><td colspan="3" class="text-center fst-italic">Belum ada produk tersedia.</td></tr>`;
+            return;
+          }
+          tabelAdminProduk.innerHTML = items
+            .map(
+              (p) => `
+      <tr data-id="${p.id}">
         <td>${p.nama}</td>
-        <td>Rp ${p.harga.toLocaleString('id-ID')}</td>
+        <td>Rp ${p.harga.toLocaleString("id-ID")}</td>
         <td>
-          <button class="btn-edit" type="button" aria-label="Edit produk ${p.nama}">Edit</button>
-          <button class="btn-danger" type="button" aria-label="Hapus produk ${p.nama}">Hapus</button>
+          <button class="btn btn-warning btn-sm me-2 btn-edit">Edit</button>
+          <button class="btn btn-danger btn-sm btn-delete">Hapus</button>
         </td>
       </tr>
-    `).join('');
+    `
+            )
+            .join("");
 
-                // Pasang event Edit dan Hapus
-                tabelAdminProduk.querySelectorAll('button.btn-edit').forEach(btn => {
-                    btn.onclick = e => {
-                        const idx = Number(btn.closest('tr').dataset.index);
-                        bukaFormEdit(idx);
-                    };
-                });
-                tabelAdminProduk.querySelectorAll('button.btn-danger').forEach(btn => {
-                    btn.onclick = e => {
-                        const idx = Number(btn.closest('tr').dataset.index);
-                        if (confirm('Yakin ingin menghapus produk ini?')) {
-                            hapusProduk(idx);
-                        }
-                    };
-                });
-            }
-
-            // --- Load data dari localStorage ---
-            function loadProduk() {
-                const data = localStorage.getItem('produkSembako');
-                try {
-                    produkList = data ? JSON.parse(data) : [];
-                } catch {
-                    produkList = [];
+          // Pasang event tombol edit & hapus
+          tabelAdminProduk.querySelectorAll(".btn-edit").forEach((btn) => {
+            btn.onclick = () => {
+              const tr = btn.closest("tr");
+              editId = tr.getAttribute("data-id");
+              const produk = produkCache.find((p) => p.id === editId);
+              if (!produk) return;
+              inputNama.value = produk.nama;
+              inputHarga.value = produk.harga;
+              inputBarcode.value = produk.barcode || "";
+              openForm(true);
+            };
+          });
+          tabelAdminProduk.querySelectorAll(".btn-delete").forEach((btn) => {
+            btn.onclick = () => {
+              const tr = btn.closest("tr");
+              const id = tr.getAttribute("data-id");
+              Swal.fire({
+                title: "Yakin ingin menghapus produk ini?",
+                icon: "warning",
+                showCancelButton: true,
+                confirmButtonColor: "#d33",
+                cancelButtonColor: "#3085d6",
+                confirmButtonText: "Ya, hapus!",
+              }).then((result) => {
+                if (result.isConfirmed) {
+                  db.collection("produk")
+                    .doc(id)
+                    .delete()
+                    .then(() => {
+                      Swal.fire(
+                        "Terhapus!",
+                        "Produk berhasil dihapus.",
+                        "success"
+                      );
+                    })
+                    .catch((err) => {
+                      Swal.fire(
+                        "Error",
+                        "Gagal menghapus produk: " + err.message,
+                        "error"
+                      );
+                    });
                 }
-            }
+              });
+            };
+          });
+        }
 
-            // --- Simpan data ke localStorage ---
-            function simpanProduk() {
-                localStorage.setItem('produkSembako', JSON.stringify(produkList));
-            }
+        // ======= FORM UTILITY =======
+        function openForm(edit = false) {
+          modeEdit = edit;
+          formProduk.classList.remove("d-none");
+          btnTambah.disabled = true;
+          inputNama.focus();
+        }
+        function closeForm() {
+          formProduk.classList.add("d-none");
+          btnTambah.disabled = false;
+          modeEdit = false;
+          editId = null;
+          formProduk.reset();
+          formProduk.classList.remove("was-validated");
+        }
 
-            // --- Tambah Produk ---
-            function tambahProduk(nama, harga) {
-                produkList.push({ nama, harga });
-                simpanProduk();
-                renderDaftarProduk();
-                renderAdminProduk();
-            }
+        // ======= EVENT FORM TAMBAH PRODUK =======
+        btnTambah.onclick = () => openForm(false);
+        btnBatal.onclick = () => closeForm();
 
-            // --- Edit Produk ---
-            function editProduk(idx, nama, harga) {
-                if (produkList[idx]) {
-                    produkList[idx] = { nama, harga };
-                    simpanProduk();
-                    renderDaftarProduk();
-                    renderAdminProduk();
-                }
-            }
+        formProduk.addEventListener("submit", (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          formProduk.classList.add("was-validated");
+          if (!formProduk.checkValidity()) return;
 
-            // --- Hapus Produk ---
-            function hapusProduk(idx) {
-                produkList.splice(idx, 1);
-                simpanProduk();
-                renderDaftarProduk();
-                renderAdminProduk();
-            }
+          const nama = inputNama.value.trim();
+          const harga = Number(inputHarga.value);
+          const barcode = inputBarcode.value.trim();
 
-            // --- Buka Form Tambah Produk ---
-            function bukaFormTambah() {
-                modeEdit = false;
-                editIndex = -1;
-                formProduk.style.display = 'flex';
-                btnTambah.disabled = true;
-                inputNama.value = '';
-                inputHarga.value = '';
-                inputNama.focus();
-            }
+          if (nama === "" || isNaN(harga) || harga < 0) {
+            Swal.fire(
+              "Error",
+              "Isi nama dan harga produk dengan benar.",
+              "error"
+            );
+            return;
+          }
 
-            // --- Buka Form Edit Produk ---
-            function bukaFormEdit(idx) {
-                modeEdit = true;
-                editIndex = idx;
-                formProduk.style.display = 'flex';
-                btnTambah.disabled = true;
-                if (produkList[idx]) {
-                    inputNama.value = produkList[idx].nama;
-                    inputHarga.value = produkList[idx].harga;
-                    inputNama.focus();
-                }
-            }
+          if (modeEdit && editId) {
+            db.collection("produk")
+              .doc(editId)
+              .update({ nama, harga, barcode: barcode || null })
+              .then(() => {
+                Swal.fire("Berhasil", "Produk berhasil diperbarui.", "success");
+                closeForm();
+              })
+              .catch((err) => {
+                Swal.fire("Error", err.message, "error");
+              });
+          } else {
+            db.collection("produk")
+              .add({ nama, harga, barcode: barcode || null })
+              .then(() => {
+                Swal.fire(
+                  "Berhasil",
+                  "Produk berhasil ditambahkan.",
+                  "success"
+                );
+                closeForm();
+              })
+              .catch((err) => {
+                Swal.fire("Error", err.message, "error");
+              });
+          }
+        });
 
-            // --- Tutup Form Produk ---
-            function tutupForm() {
-                formProduk.style.display = 'none';
-                btnTambah.disabled = false;
-                modeEdit = false;
-                editIndex = -1;
-            }
+        // ======= TAB PROTECTION =======
+        const daftarTab = new bootstrap.Tab(daftarTabBtn);
+        const adminTab = new bootstrap.Tab(adminTabBtn);
 
-            // --- Event Listener Form Submit ---
-            formProduk.addEventListener('submit', e => {
-                e.preventDefault();
-                const nama = inputNama.value.trim();
-                const harga = Number(inputHarga.value);
-                if (!nama) {
-                    alert('Nama produk wajib diisi!');
-                    return;
-                }
-                if (isNaN(harga) || harga < 0) {
-                    alert('Harga harus berupa angka positif!');
-                    return;
-                }
-                if (modeEdit) {
-                    editProduk(editIndex, nama, harga);
-                } else {
-                    tambahProduk(nama, harga);
-                }
-                tutupForm();
+        adminTabBtn.addEventListener("click", (e) => {
+          if (!auth.currentUser) {
+            e.preventDefault();
+            modalLogin.show();
+          }
+        });
+        daftarTabBtn.addEventListener("click", () => {
+          // no special action needed
+        });
+
+        // ======= LOGIN MODAL & FORM =======
+        formLogin.addEventListener("submit", (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          formLogin.classList.add("was-validated");
+          loginErrorDiv.textContent = "";
+
+          if (!formLogin.checkValidity()) return;
+
+          auth
+            .signInWithEmailAndPassword(
+              loginEmail.value.trim(),
+              loginPassword.value
+            )
+            .then(() => {
+              modalLogin.hide();
+              formLogin.reset();
+              formLogin.classList.remove("was-validated");
+              Swal.fire("Login berhasil", "", "success");
+              adminTab.show();
+            })
+            .catch((err) => {
+              loginErrorDiv.textContent = err.message;
             });
+        });
 
-            // Batal tombol
-            btnBatal.addEventListener('click', e => {
-                e.preventDefault();
-                tutupForm();
+        // ======= LOGOUT =======
+        btnLogout.onclick = () => {
+          auth.signOut();
+        };
+
+        // ======= AUTH STATE CHANGE HANDLER =======
+        auth.onAuthStateChanged((user) => {
+          if (user) {
+            btnLogout.classList.remove("d-none");
+            btnTambah.disabled = false;
+            mulaiSnapshotListener();
+          } else {
+            btnLogout.classList.add("d-none");
+            btnTambah.disabled = true;
+            closeForm();
+            if (unsubscribeProduk) {
+              unsubscribeProduk();
+              unsubscribeProduk = null;
+            }
+            // Bersihkan tabel data agar tidak ada data lama tampil saat logout
+            tabelDaftarProduk.innerHTML = `<tr><td colspan="2" class="text-center fst-italic">Silakan login untuk melihat data produk.</td></tr>`;
+            tabelAdminProduk.innerHTML = `<tr><td colspan="3" class="text-center fst-italic">Silakan login untuk melihat data produk.</td></tr>`;
+            // Jika sedang di tab admin, pindah ke daftar
+            if (document.querySelector(".nav-link.active").id === "admin-tab") {
+              daftarTab.show();
+            }
+          }
+        });
+
+        // ======= BARCODE SCANNER WITH html5-qrcode =======
+        if (window.Html5Qrcode) {
+          html5QrcodeScanner = new Html5Qrcode("reader");
+        } else {
+          console.warn("Library html5-qrcode belum dimuat.");
+        }
+
+        function cariProdukByBarcode(code) {
+          if (!code) return null;
+          code = code.trim();
+          if (!Array.isArray(latestProduk)) return null;
+          return latestProduk.find((p) => p.barcode && p.barcode === code);
+        }
+
+        function tampilkanHasilScan(code) {
+          const produk = cariProdukByBarcode(code);
+          if (produk) {
+            scanResultElement.textContent = `Kode Batang ditemukan: ${
+              produk.nama
+            } — Harga Rp ${produk.harga.toLocaleString("id-ID")}`;
+            Swal.fire({
+              icon: "success",
+              title: "Produk ditemukan",
+              html: `<b>${
+                produk.nama
+              }</b><br/>Harga: Rp ${produk.harga.toLocaleString("id-ID")}`,
+              timer: 3000,
+              showConfirmButton: false,
             });
-
-            // Tombol Tambah Produk
-            btnTambah.addEventListener('click', bukaFormTambah);
-
-            // Tab pindah dengan keyboard support (optional)
-            tabDaftar.addEventListener('click', () => setActiveTab('daftar'));
-            tabAdmin.addEventListener('click', () => setActiveTab('admin'));
-
-            // Keyboard arrow key to switch tabs (optional)
-            [tabDaftar, tabAdmin].forEach((tab, idx, arr) => {
-                tab.addEventListener('keydown', e => {
-                    if (e.key === 'ArrowRight') {
-                        arr[(idx + 1) % arr.length].focus();
-                        e.preventDefault();
-                    }
-                    if (e.key === 'ArrowLeft') {
-                        arr[(idx - 1 + arr.length) % arr.length].focus();
-                        e.preventDefault();
-                    }
-                    if (e.key === 'Enter' || e.key === ' ') {
-                        setActiveTab(tab.id === 'tabDaftar' ? 'daftar' : 'admin');
-                        e.preventDefault();
-                    }
-                });
+          } else {
+            scanResultElement.textContent = `Kode batang "${code}" tidak ditemukan.`;
+            Swal.fire({
+              icon: "error",
+              title: "Tidak ditemukan",
+              text: `Produk dengan kode batang "${code}" tidak ditemukan di database.`,
+              timer: 3000,
+              showConfirmButton: false,
             });
+          }
+        }
 
-            // Inisialisasi data dan UI
-            loadProduk();
-            renderDaftarProduk();
-            renderAdminProduk();
-            setActiveTab('daftar');
-        })();
+        btnScanBarcode.onclick = () => {
+          if (scanning) return;
+          scanning = true;
+          btnScanBarcode.classList.add("d-none");
+          btnStopScan.classList.remove("d-none");
+          readerElement.style.display = "block";
+          scanResultElement.textContent = "";
+          if (html5QrcodeScanner) {
+            html5QrcodeScanner
+              .start(
+                { facingMode: "environment" },
+                {
+                  fps: 10,
+                  qrbox: { width: 300, height: 100 },
+                  formatsToSupport: [
+                    Html5QrcodeSupportedFormats.CODE_128,
+                    Html5QrcodeSupportedFormats.EAN_13,
+                    Html5QrcodeSupportedFormats.EAN_8,
+                    Html5QrcodeSupportedFormats.UPC_A,
+                    Html5QrcodeSupportedFormats.UPC_E,
+                    Html5QrcodeSupportedFormats.CODE_39,
+                    Html5QrcodeSupportedFormats.QR_CODE,
+                  ],
+                },
+                (decodedText) => {
+                  tampilkanHasilScan(decodedText);
+                  html5QrcodeScanner.stop();
+                  scanning = false;
+                  btnScanBarcode.classList.remove("d-none");
+                  btnStopScan.classList.add("d-none");
+                  readerElement.style.display = "none";
+                },
+                (errorMessage) => {
+                  // Ignore or log scan errors silently
+                  // console.log("Scan error:", errorMessage);
+                }
+              )
+              .catch((err) => {
+                Swal.fire(
+                  "Error scanner",
+                  "Tidak dapat mengakses kamera: " + err.message,
+                  "error"
+                );
+                scanning = false;
+                btnScanBarcode.classList.remove("d-none");
+                btnStopScan.classList.add("d-none");
+                readerElement.style.display = "none";
+              });
+          }
+        };
+
+        btnStopScan.onclick = () => {
+          if (!scanning) return;
+          html5QrcodeScanner
+            .stop()
+            .then(() => {
+              scanning = false;
+              btnScanBarcode.classList.remove("d-none");
+              btnStopScan.classList.add("d-none");
+              readerElement.style.display = "none";
+              scanResultElement.textContent = "";
+            })
+            .catch((err) => {
+              console.error(err);
+            });
+        };
+      })();
     </script>
-
-</body>
-
+  </body>
 </html>
