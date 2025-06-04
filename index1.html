@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Scan Kode Batang & Daftar Harga Produk</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      background: #f5f5f5;
+      text-align: center;
+    }
+    #interactive {
+      max-width: 600px;
+      margin: 0 auto;
+      position: relative;
+    }
+    video {
+      width: 100%;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+    }
+    #hasil {
+      margin-top: 15px;
+      font-size: 1.2rem;
+      min-height: 40px;
+      color: #333;
+    }
+    #daftarHarga {
+      margin-top: 20px;
+      max-width: 600px;
+      margin-left: auto;
+      margin-right: auto;
+      background: #fff;
+      border-radius: 8px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+      padding: 20px;
+      text-align: left;
+      display: none;
+    }
+    #daftarHarga h2 {
+      margin-top: 0;
+      margin-bottom: 15px;
+      color: #0066cc;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    th, td {
+      text-align: left;
+      padding: 8px;
+      border-bottom: 1px solid #ddd;
+    }
+    th {
+      background-color: #f2f2f2;
+    }
+    button {
+      margin-top: 20px;
+      padding: 10px 25px;
+      font-size: 1rem;
+      background-color: #0066cc;
+      border: none;
+      color: white;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    button:disabled {
+      background: #999;
+      cursor: not-allowed;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Scan Kode Batang & Daftar Harga Produk</h1>
+
+  <div id="interactive">
+    <video autoplay muted playsinline></video>
+  </div>
+
+  <div id="hasil">Arahkan kamera ke kode batang produk</div>
+  <button id="startScan">Mulai Scan</button>
+
+  <div id="daftarHarga">
+    <h2>Produk Terbaca</h2>
+    <table>
+      <thead>
+        <tr><th>Kode Barang</th><th>Nama Produk</th><th>Harga (Rp)</th></tr>
+      </thead>
+      <tbody id="tabelProdukBody"></tbody>
+    </table>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/quagga/0.12.1/quagga.min.js"></script>
+  <script>
+    const startScanBtn = document.getElementById('startScan');
+    const hasilElement = document.getElementById('hasil');
+    const daftarHargaDiv = document.getElementById('daftarHarga');
+    const tabelProdukBody = document.getElementById('tabelProdukBody');
+
+    // Database produk lokal
+    const databaseProduk = {
+      "8999999000012": {nama: "Kopi Luwak Asli", harga: 120000},
+      "8999999000029": {nama: "Sambal Terasi ABC", harga: 15000},
+      "8999999000036": {nama: "Kerupuk Udang", harga: 12000},
+      "8999999000043": {nama: "Tempe Mendoan", harga: 8000},
+      "1234567890123": {nama: "Minuman Soda 500ml", harga: 12000},
+      "9876543210987": {nama: "Biskuit Coklat", harga: 8000},
+      "1122334455667": {nama: "Susu UHT 1L", harga: 15000}
+    };
+
+    let scanning = false;
+    // Simpan produk yang sudah discan agar list unique
+    const produkTerscan = {};
+
+    function mulaiScan() {
+      if(scanning) return;
+      hasilElement.textContent = "Mempersiapkan scanner...";
+      startScanBtn.disabled = true;
+      daftarHargaDiv.style.display = 'block';
+
+      if(!Quagga.initialized){
+        Quagga.init({
+          inputStream: {
+            name: 'Live',
+            type: 'LiveStream',
+            target: document.querySelector('#interactive'),
+            constraints: {
+              facingMode: 'environment'
+            }
+          },
+          decoder: {
+            readers: [
+              "code_128_reader",
+              "ean_reader",
+              "ean_8_reader",
+              "upc_reader",
+              "upc_e_reader",
+              "code_39_reader"
+            ]
+          },
+          locate: true
+        }, function(err){
+          if(err){
+            console.error(err);
+            hasilElement.textContent = "Gagal memulai scanner: "+err.message;
+            startScanBtn.disabled = false;
+            return;
+          }
+          Quagga.initialized = true;
+          Quagga.start();
+          scanning = true;
+          hasilElement.textContent = "Scan dimulai. Arahkan kamera ke kode batang.";
+        });
+      } else {
+        Quagga.start();
+        scanning = true;
+        hasilElement.textContent = "Scan dimulai. Arahkan kamera ke kode batang.";
+      }
+    }
+
+    // Fungsi ketika barcode terdeteksi
+    Quagga.onDetected(function(result){
+      if(result && result.codeResult && result.codeResult.code){
+        const code = result.codeResult.code;
+        if(!produkTerscan[code]){
+          produkTerscan[code] = true;
+          hasilElement.textContent = "Kode terdeteksi: " + code;
+          tambahProdukKeTabel(code);
+        }
+      }
+    });
+
+    function tambahProdukKeTabel(kode){
+      const produk = databaseProduk[kode];
+      if(produk){
+        const tr = document.createElement('tr');
+
+        const tdKode = document.createElement('td');
+        tdKode.textContent = kode;
+        tr.appendChild(tdKode);
+
+        const tdNama = document.createElement('td');
+        tdNama.textContent = produk.nama;
+        tr.appendChild(tdNama);
+
+        const tdHarga = document.createElement('td');
+        tdHarga.textContent = produk.harga.toLocaleString('id-ID');
+        tr.appendChild(tdHarga);
+
+        tabelProdukBody.appendChild(tr);
+      } else {
+        hasilElement.textContent = `Kode ${kode} tidak ditemukan dalam database.`;
+      }
+    }
+
+    startScanBtn.addEventListener('click', () => {
+      // Reset dulu produk hasil scan ekse saat mulai scan baru
+      produksiReset();
+      mulaiScan();
+    });
+
+    function produksiReset(){
+      // Reset produk terscan dan hapus isi tabel
+      for (const key in produkTerscan) {
+        if(produkTerscan.hasOwnProperty(key)){
+          delete produkTerscan[key];
+        }
+      }
+      tabelProdukBody.innerHTML = '';
+      daftarHargaDiv.style.display = 'none';
+      hasilElement.textContent = "Arahkan kamera ke kode batang produk";
+    }
+  </script>
+</body>
+</html>

@@ -1,151 +1,119 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Scan Kode Batang Produk Indonesia</title>
-    <style>
-        body { font-family: Arial, sans-serif; padding: 20px; background:#f9f9f9; text-align:center; }
-        #interactive { max-width:600px; margin:0 auto; }
-        video { width: 100%; border-radius:8px; }
-        #hasil { margin-top:20px; font-size:1.25rem; min-height:40px; }
-        #dataProduk { margin:20px auto; background:#fff; max-width:600px; border-radius:8px; padding:20px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); text-align:left; display:none; }
-        #dataProduk h2 { margin-top:0; }
-        #dataProduk img { width:150px; margin-bottom:15px; border-radius:4px; }
-        button { margin-top:15px; background:#007bff; border:none; color:white; padding:10px 20px; font-size:1rem; border-radius:5px; cursor:pointer; }
-        button:disabled { background:#999; cursor:not-allowed; }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Generator Kode Batang (Barcode)</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      max-width: 600px;
+      margin: 0 auto;
+      background: #f9f9f9;
+      text-align: center;
+    }
+    h1 {
+      margin-bottom: 20px;
+    }
+    input[type="text"] {
+      padding: 10px;
+      font-size: 1rem;
+      width: calc(100% - 22px);
+      max-width: 400px;
+      margin-bottom: 15px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+    }
+    button {
+      padding: 10px 25px;
+      font-size: 1rem;
+      background: #007bff;
+      border: none;
+      color: white;
+      border-radius: 5px;
+      cursor: pointer;
+      margin-bottom: 25px;
+    }
+    button:disabled {
+      background: #999;
+      cursor: not-allowed;
+    }
+    svg {
+      margin-top: 15px;
+      border: 1px solid #ccc;
+      padding: 10px;
+      background: white;
+      border-radius: 5px;
+    }
+    #pesan {
+      margin-top: 10px;
+      color: red;
+      font-weight: bold;
+    }
+    @media (max-width: 480px) {
+      input[type="text"] {
+        max-width: 100%;
+      }
+    }
+  </style>
 </head>
 <body>
-    <h1>Scan Kode Batang Produk Indonesia</h1>
+  <h1>Generator Kode Batang (Barcode)</h1>
+  <input type="text" id="inputKode" placeholder="Masukkan teks / angka untuk barcode" maxlength="30" />
+  <br />
+  <button id="btnGenerate">Generate Barcode</button>
+  <div id="pesan"></div>
+  <div>
+    <svg id="barcode"></svg>
+  </div>
 
-    <div id="interactive">
-        <video autoplay muted playsinline></video>
-    </div>
+  <!-- JsBarcode CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
 
-    <div id="hasil">Arahkan kamera ke kode batang produk Indonesia</div>
-    <button id="mulaiScan">Mulai Scan</button>
+  <script>
+    const inputKode = document.getElementById('inputKode');
+    const btnGenerate = document.getElementById('btnGenerate');
+    const pesan = document.getElementById('pesan');
+    const barcodeSVG = document.getElementById('barcode');
 
-    <div id="dataProduk">
-        <h2>Detail Produk</h2>
-        <img id="gambarProduk" alt="Gambar Produk" />
-        <p><strong>Kode:</strong> <span id="kodeProduk"></span></p>
-        <p><strong>Nama:</strong> <span id="namaProduk"></span></p>
-        <p><strong>Deskripsi:</strong> <span id="deskripsiProduk"></span></p>
-        <p><strong>Harga:</strong> Rp <span id="hargaProduk"></span></p>
-    </div>
+    function generateBarcode() {
+      const value = inputKode.value.trim();
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/quagga/0.12.1/quagga.min.js"></script>
-    <script>
-        const hasilElement = document.getElementById('hasil');
-        const mulaiScanBtn = document.getElementById('mulaiScan');
-        const dataProdukDiv = document.getElementById('dataProduk');
-        const gambarProdukImg = document.getElementById('gambarProduk');
-        const kodeProdukSpan = document.getElementById('kodeProduk');
-        const namaProdukSpan = document.getElementById('namaProduk');
-        const deskripsiProdukSpan = document.getElementById('deskripsiProduk');
-        const hargaProdukSpan = document.getElementById('hargaProduk');
+      if (!value) {
+        pesan.textContent = "Input tidak boleh kosong!";
+        barcodeSVG.innerHTML = '';
+        return;
+      }
 
-        // Database produk Indonesia statis (modal contoh)
-        const produkIndonesia = {
-            "8999999000012": {
-                nama: "Kopi Luwak Asli",
-                deskripsi: "Kopi asli Indonesia dengan cita rasa terbaik dari biji kopi luwak pilihan.",
-                harga: 120000,
-                gambar: "https://upload.wikimedia.org/wikipedia/commons/1/11/Civet_cat_coffee_beans.jpg"
-            },
-            "8999999000029": {
-                nama: "Sambal Terasi ABC",
-                deskripsi: "Sambal terasi otentik dengan rasa pedas khas Indonesia.",
-                harga: 15000,
-                gambar: "https://upload.wikimedia.org/wikipedia/commons/5/5e/Indonesian_sambal.jpg"
-            },
-            "8999999000036": {
-                nama: "Kerupuk Udang",
-                deskripsi: "Kerupuk renyah dengan rasa udang asli, cocok sebagai teman makan.",
-                harga: 12000,
-                gambar: "https://upload.wikimedia.org/wikipedia/commons/6/66/Krupuk_udang_500g.jpg"
-            },
-            "8999999000043": {
-                nama: "Tempe Mendoan",
-                deskripsi: "Tempe khas Banyumas yang digoreng tipis dan renyah.",
-                harga: 8000,
-                gambar: "https://upload.wikimedia.org/wikipedia/commons/c/c5/Tempeh_rinde_meal.jpg"
-            }
-            // Tambah produk Indonesia lainnya di sini...
-        };
+      // Validasi - cuma angka dan huruf (bisa diubah sesuai kebutuhan)
+      const valid = /^[0-9A-Za-z\-]+$/.test(value);
+      if (!valid) {
+        pesan.textContent = "Input hanya boleh mengandung angka, huruf, dan tanda -";
+        barcodeSVG.innerHTML = '';
+        return;
+      }
 
-        let scanning = false;
+      pesan.textContent = "";
 
-        function tampilkanDataProduk(produk, kode) {
-            kodeProdukSpan.textContent = kode;
-            namaProdukSpan.textContent = produk.nama;
-            deskripsiProdukSpan.textContent = produk.deskripsi;
-            hargaProdukSpan.textContent = produk.harga.toLocaleString('id-ID');
+      JsBarcode("#barcode", value, {
+        format: "code128",
+        lineColor: "#000",
+        width: 2,
+        height: 100,
+        displayValue: true,
+        fontSize: 18
+      });
+    }
 
-            if (produk.gambar) {
-                gambarProdukImg.src = produk.gambar;
-                gambarProdukImg.style.display = 'block';
-            } else {
-                gambarProdukImg.style.display = 'none';
-            }
+    btnGenerate.addEventListener('click', generateBarcode);
 
-            dataProdukDiv.style.display = 'block';
-        }
-
-        function mulaiScan() {
-            if (scanning) return;
-
-            hasilElement.textContent = "Mempersiapkan scanner...";
-            mulaiScanBtn.disabled = true;
-            dataProdukDiv.style.display = 'none';
-
-            Quagga.init({
-                inputStream: {
-                    name: "Live",
-                    type: "LiveStream",
-                    target: document.querySelector('#interactive'),
-                    constraints: {
-                        facingMode: "environment"
-                    }
-                },
-                decoder: {
-                    readers: ["code_128_reader", "ean_reader", "ean_8_reader", "upc_reader", "upc_e_reader"],
-                },
-                locate: true
-            }, (err) => {
-                if (err) {
-                    console.error(err);
-                    hasilElement.textContent = "Gagal memulai scanner: " + err.message;
-                    mulaiScanBtn.disabled = false;
-                    return;
-                }
-                Quagga.start();
-                scanning = true;
-                hasilElement.textContent = "Silakan arahkan kamera ke kode batang produk Indonesia...";
-            });
-
-            Quagga.onDetected((result) => {
-                if (result && result.codeResult && result.codeResult.code) {
-                    const code = result.codeResult.code;
-                    hasilElement.textContent = "Kode terdeteksi: " + code;
-
-                    Quagga.stop();
-                    scanning = false;
-                    mulaiScanBtn.disabled = false;
-
-                    // Cari produk di database lokal
-                    if (produkIndonesia[code]) {
-                        tampilkanDataProduk(produkIndonesia[code], code);
-                    } else {
-                        dataProdukDiv.style.display = 'none';
-                        hasilElement.textContent = `Maaf, data produk dengan kode batang ${code} belum tersedia.`;
-                    }
-                }
-            });
-        }
-
-        mulaiScanBtn.addEventListener('click', mulaiScan);
-    </script>
+    // Optional: generate barcode saat tekan Enter pada input
+    inputKode.addEventListener('keypress', function(e) {
+      if(e.key === 'Enter'){
+        generateBarcode();
+      }
+    });
+  </script>
 </body>
 </html>
