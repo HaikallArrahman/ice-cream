@@ -269,6 +269,12 @@
       #settingsPanel.show {
         display: block;
       }
+
+      #reader {
+      width: 300px;
+      height: 300px;
+      margin-bottom: 1rem;
+    }
     </style>
   </head>
   <body>
@@ -492,7 +498,7 @@
                 Mohon isi harga produk yang valid.
               </div>
             </div>
-            <div class="col-md-12 mt-2 d-flex gap-2 align-items-center">
+            <div class="col-md-12">
               <label for="inputBarcode" class="form-label" data-i18n="barcode">
                 Kode Batang (Barcode)
               </label>
@@ -503,7 +509,9 @@
                 autocomplete="off"
                 placeholder="Masukkan kode batang atau scan"
               />
-              
+              <small class="form-text text-muted" data-i18n="barcode_help">
+                Kode batang ini digunakan untuk pencarian dengan scan.
+              </small>
             </div>
             <div class="col-12 d-flex gap-2 justify-content-end">
               <button
