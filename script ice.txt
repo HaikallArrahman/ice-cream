@@ -18,3 +18,14 @@ service cloud.firestore {
 }
 
 Kalau butuh modifikasi atau contoh Rules keamanan Firestore, silakan tanya kembali.
+
+<footer class="text-center mt-5 mb-3 text-muted" aria-label="Copyright">
+      &copy; <span id="copyrightYear"></span> Warung Sembako. All rights
+      reserved.
+    </footer>
+    <script>
+      // Set current year dynamically
+      document.getElementById("copyrightYear").textContent =
+        new Date().getFullYear();
+    </script>
+<a style="text-decoration:none" href="https://thohirdev.com"> website </a>
