@@ -7,33 +7,256 @@
       Warung Sembako - Admin dengan Firestore, Auth & Barcode Scanner
     </title>
 
-    <!-- Bootstrap 5 -->
+    <!-- Font Awesome -->
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css"
+      integrity="sha512-Evv84Mr4kqVGRNSgIGL/F/aIDqQb7xQ2vcrdIwxfjThSH8CSR7PBEakCr51Ck+w+/U6swU2Im1vVX0SVk9ABhg=="
+      crossorigin="anonymous"
+      referrerpolicy="no-referrer"
+    />
+
+    <!-- Bootstrap 5.3 latest -->
     <link
       href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
       rel="stylesheet"
+      crossorigin="anonymous"
     />
     <!-- SweetAlert2 -->
     <link
       href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="style.css" />
+
+    <style>
+      /* Base light theme */
+      body {
+        background: linear-gradient(135deg, #c3e7f7 0%, #fff 100%);
+        min-height: 100vh;
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        color: #33475b;
+        padding: 30px 15px 50px;
+        transition: background-color 0.3s ease, color 0.3s ease;
+      }
+      .container {
+        max-width: 900px;
+        background: #fefefe;
+        padding: 35px 40px;
+        border-radius: 16px;
+        box-shadow: 0 14px 40px rgba(0, 0, 0, 0.1),
+          0 8px 20px rgba(0, 0, 0, 0.07);
+        position: relative;
+        z-index: 1;
+      }
+      nav button.nav-link.active {
+        background: linear-gradient(135deg, #1962d0 0%, #0d3d81 100%);
+        color: white !important;
+      }
+      #btnLogout {
+        position: fixed;
+        top: 15px;
+        right: 25px;
+        z-index: 1051;
+      }
+      .table thead {
+        background: #2980b9;
+        color: #fff;
+      }
+      .table tbody tr {
+        background: #f4faff;
+        border-radius: 12px;
+        box-shadow: 0 3px 10px rgba(25, 98, 208, 0.15);
+      }
+      .table {
+        border-collapse: separate !important;
+        border-spacing: 0 9px !important;
+      }
+      .table tbody tr td:first-child {
+        border-top-left-radius: 12px;
+        border-bottom-left-radius: 12px;
+      }
+      .table tbody tr td:last-child {
+        border-top-right-radius: 12px;
+        border-bottom-right-radius: 12px;
+      }
+      #reader {
+        width: 320px;
+        margin: 15px auto 0;
+        border-radius: 12px;
+        box-shadow: 0 0 12px rgba(25, 98, 208, 0.5);
+      }
+      #scanResult {
+        text-align: center;
+        margin-top: 12px;
+        font-weight: 700;
+        color: #1962d0;
+        font-size: 1.25rem;
+      }
+      /* Overlay Blur */
+      #overlayBlur {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        backdrop-filter: blur(6px);
+        background-color: rgba(255, 255, 255, 0.3);
+        pointer-events: none;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+        z-index: 1040;
+      }
+      #overlayBlur.active {
+        pointer-events: auto;
+        opacity: 1;
+      }
+      /* Additional styling */
+      .btn-scan {
+        font-weight: 600;
+        font-size: 1.1rem;
+        padding: 0.5rem 1.5rem;
+        border-radius: 30px;
+        transition: background-color 0.3s ease, box-shadow 0.3s ease;
+      }
+      .btn-scan:hover {
+        background-color: #0d3d81;
+        color: #fff;
+        box-shadow: 0 8px 24px rgba(25, 98, 208, 0.6);
+      }
+      /* Admin header */
+      #judulAdmin {
+        font-weight: 700;
+        color: #1053af;
+      }
+      /* Customize modal */
+      .modal-content {
+        border-radius: 12px;
+        box-shadow: 0 14px 40px rgba(0, 0, 0, 0.15);
+      }
+      .modal-title {
+        color: #0d3d81;
+        font-weight: 700;
+      }
+      /* Buttons spacing in modal */
+      .modal-footer.d-flex.gap-2 > button {
+        font-size: 1rem;
+        padding: 0.5rem 0;
+        border-radius: 8px;
+        transition: background-color 0.3s ease;
+      }
+      /* Responsive adjustments */
+      @media (max-width: 480px) {
+        #reader {
+          width: 100%;
+        }
+        .btn-scan {
+          padding: 0.5rem 1rem;
+          font-size: 1rem;
+          width: 100%;
+        }
+        #scanResult {
+          font-size: 1rem;
+        }
+      }
+
+      /* Dark theme */
+      body.dark-theme {
+        background: #121212;
+        color: #ddd;
+      }
+      body.dark-theme .container {
+        background: #1e1e1e;
+        box-shadow: 0 14px 40px rgba(0, 0, 0, 0.7);
+        color: #ddd;
+      }
+      body.dark-theme nav button.nav-link.active {
+        background: linear-gradient(135deg, #4a9cf7 0%, #2768d1 100%);
+        color: #eef5ff !important;
+      }
+      body.dark-theme .table thead {
+        background: #2768d1;
+      }
+      body.dark-theme .table tbody tr {
+        background: #2a2a2a;
+        box-shadow: 0 3px 10px rgba(74, 156, 247, 0.4);
+      }
+      body.dark-theme #reader {
+        box-shadow: 0 0 12px #4a9cf7;
+      }
+      body.dark-theme #btnLogout {
+        background-color: #d9534f;
+        color: #fff;
+        border: none;
+      }
+      body.dark-theme .btn-scan:hover {
+        background-color: #4a9cf7;
+      }
+      body.dark-theme .modal-content {
+        background-color: #2a2a2a;
+        color: #ddd;
+      }
+      body.dark-theme .modal-title {
+        color: #4a9cf7;
+      }
+      body.dark-theme .form-control {
+        background-color: #3c3c3c;
+        color: #ddd;
+        border-color: #555;
+      }
+      body.dark-theme .form-control:focus {
+        background-color: #444;
+        color: #fff;
+        border-color: #4a9cf7;
+        box-shadow: 0 0 4px #4a9cf7;
+      }
+      body.dark-theme .btn-primary {
+        background-color: #4a9cf7;
+        border: none;
+      }
+      body.dark-theme .btn-danger {
+        background-color: #d9534f;
+        border: none;
+      }
+      body.dark-theme .text-muted {
+        color: #aaa !important;
+      }
+      /* Settings Button inside admin */
+      #btnOpenSettings {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        z-index: 1052;
+      }
+      /* Settings Panel */
+      #adminSettings {
+        max-width: 500px;
+      }
+      #adminSettings label,
+      #adminSettings h3,
+      #adminSettings button {
+        user-select: none;
+      }
+    </style>
   </head>
   <body>
-    <button id="btnLogout" class="btn btn-danger d-none shadow-sm">
+    <button
+      id="btnLogout"
+      class="btn btn-danger d-none shadow-sm"
+      aria-label="Logout"
+    >
       Logout
     </button>
 
-    <!-- Theme toggle for outside admin -->
-    <!-- <button
+    <!-- Theme toggle outside admin -->
+    <button
       id="btnToggleTheme"
       class="btn btn-outline-secondary shadow-sm"
       style="position: fixed; bottom: 20px; left: 20px; z-index: 1052"
-      aria-label="Toggle theme"
+      aria-label="Toggle Dark/Light Theme"
       title="Toggle Dark/Light Theme"
     >
       🌓
-    </button> -->
+    </button>
 
     <!-- Settings button (inside admin only) -->
     <button
@@ -47,8 +270,13 @@
 
     <div id="overlayBlur"></div>
 
-    <div class="container">
-      <ul class="nav nav-tabs mb-4" id="tabNav" role="tablist">
+    <div class="container" role="main">
+      <ul
+        class="nav nav-tabs mb-4"
+        id="tabNav"
+        role="tablist"
+        aria-label="Navigation tabs"
+      >
         <li class="nav-item" role="presentation">
           <button
             class="nav-link active"
@@ -60,7 +288,10 @@
             aria-controls="daftar"
             aria-selected="true"
           >
-            Daftar Produk
+            <h6>
+              <i class="fa-solid fa-bag-shopping" style="color: #000000"></i>
+              Daftar Produk
+            </h6>
           </button>
         </li>
         <li class="nav-item" role="presentation">
@@ -74,7 +305,10 @@
             aria-controls="admin"
             aria-selected="false"
           >
-            Halaman Admin
+            <h6>
+              <i class="fa-solid fa-lock fa-4xs" style="color: #000000"> </i>
+              Admin
+            </h6>
           </button>
         </li>
       </ul>
@@ -87,7 +321,11 @@
           aria-labelledby="daftar-tab"
           tabindex="0"
         >
-          <h1 id="judulDaftarProduk" class="h3 text-center mb-3 text-primary">
+          <h1
+            id="judulDaftarProduk"
+            class="h3 text-center mb-3 text-primary"
+            tabindex="0"
+          >
             Daftar Harga Warung Sembako
           </h1>
           <div class="table-responsive shadow-sm rounded">
@@ -120,6 +358,7 @@
               id="btnScanBarcode"
               class="btn btn-outline-primary btn-scan"
               data-i18n="scan_barcode"
+              aria-label="Scan Barcode"
             >
               Scan Kode Batang
             </button>
@@ -127,11 +366,17 @@
               id="btnStopScan"
               class="btn btn-outline-danger btn-scan d-none"
               data-i18n="stop_scan"
+              aria-label="Stop Scan"
             >
               Stop Scan
             </button>
           </div>
-          <div id="reader" style="display: none"></div>
+          <div
+            id="reader"
+            style="display: none"
+            aria-live="polite"
+            aria-atomic="true"
+          ></div>
           <div id="scanResult" aria-live="polite" aria-atomic="true"></div>
         </div>
 
@@ -142,12 +387,15 @@
           aria-labelledby="admin-tab"
           tabindex="0"
         >
-          <h1 id="judulAdmin" class="h3 text-center mb-3">Hello {User}</h1>
+          <h1 id="judulAdmin" class="h3 text-center mb-3" tabindex="0">
+            Hello {User}
+          </h1>
           <button
             id="btnTambah"
             class="btn btn-primary mb-3 shadow-sm"
             disabled
             data-i18n="add_new_product"
+            aria-label="Tambah Produk Baru"
           >
             Tambah Produk Baru
           </button>
@@ -156,6 +404,7 @@
             id="formProduk"
             class="row g-3 d-none shadow-sm rounded p-4"
             novalidate
+            aria-label="Form tambah/edit produk"
           >
             <div class="col-md-6">
               <label for="inputNama" class="form-label" data-i18n="product_name"
@@ -168,6 +417,7 @@
                 required
                 autocomplete="off"
                 placeholder="Masukkan nama produk"
+                aria-required="true"
               />
               <div
                 class="invalid-feedback"
@@ -189,6 +439,7 @@
                 required
                 autocomplete="off"
                 placeholder="Masukkan harga produk"
+                aria-required="true"
               />
               <div class="invalid-feedback" data-i18n="please_fill_valid_price">
                 Mohon isi harga produk yang valid.
@@ -214,6 +465,7 @@
                 type="submit"
                 class="btn btn-primary btn-lg px-4"
                 data-i18n="save"
+                aria-label="Simpan Produk"
               >
                 Simpan
               </button>
@@ -222,6 +474,7 @@
                 class="btn btn-danger btn-lg px-4"
                 id="btnBatal"
                 data-i18n="cancel"
+                aria-label="Batal Simpan Produk"
               >
                 Batal
               </button>
@@ -233,6 +486,7 @@
             id="adminSettings"
             class="shadow-sm rounded p-4 border mt-4 d-none"
             aria-label="Pengaturan"
+            tabindex="0"
           >
             <h3>Pengaturan</h3>
             <form id="formSettings" novalidate>
@@ -259,18 +513,11 @@
                   <option value="en">English</option>
                 </select>
               </div>
-              <!-- <div class="mb-3">
-                <label for="settingTheme" class="form-label">Tema</label>
-                <select
-                  id="settingTheme"
-                  class="form-select"
-                  aria-label="Pilih Tema"
-                >
-                  <option value="light">Light / Terang</option>
-                  <option value="dark">Dark / Gelap</option>
-                </select>
-              </div> -->
-              <button type="submit" class="btn btn-success">
+              <button
+                type="submit"
+                class="btn btn-success"
+                aria-label="Simpan Pengaturan"
+              >
                 Simpan Pengaturan
               </button>
             </form>
@@ -332,6 +579,7 @@
                 required
                 autocomplete="username"
                 placeholder="Masukkan email"
+                aria-required="true"
               />
               <div class="invalid-feedback" data-i18n="please_enter_email">
                 Mohon masukkan email yang valid.
@@ -348,6 +596,7 @@
                 required
                 autocomplete="current-password"
                 placeholder="Masukkan password"
+                aria-required="true"
               />
               <div class="invalid-feedback" data-i18n="please_enter_password">
                 Mohon masukkan password.
@@ -360,6 +609,7 @@
               type="submit"
               class="btn btn-primary w-100 btn-lg"
               data-i18n="login"
+              aria-label="Login"
             >
               Login
             </button>
@@ -368,6 +618,7 @@
               class="btn btn-danger w-100 btn-lg"
               id="btnCancelLogin"
               data-i18n="cancel"
+              aria-label="Batal Login"
             >
               Batal
             </button>
@@ -406,22 +657,20 @@
         const auth = firebase.auth();
         const db = firebase.firestore();
 
-        // Elements
+        // UI elements
         const daftarTabBtn = document.getElementById("daftar-tab");
         const adminTabBtn = document.getElementById("admin-tab");
         const btnLogout = document.getElementById("btnLogout");
         const btnOpenSettings = document.getElementById("btnOpenSettings");
-        // const btnToggleTheme = document.getElementById("btnToggleTheme");
+        const btnToggleTheme = document.getElementById("btnToggleTheme");
         const overlayBlur = document.getElementById("overlayBlur");
 
         const judulDaftarProduk = document.getElementById("judulDaftarProduk");
         const judulAdmin = document.getElementById("judulAdmin");
 
-        // Table bodies
         const tabelDaftarProduk = document.getElementById("tabelDaftarProduk");
         const tabelAdminProduk = document.getElementById("tabelAdminProduk");
 
-        // Admin form elements
         const btnTambah = document.getElementById("btnTambah");
         const formProduk = document.getElementById("formProduk");
         const inputNama = document.getElementById("inputNama");
@@ -429,7 +678,6 @@
         const inputBarcode = document.getElementById("inputBarcode");
         const btnBatal = document.getElementById("btnBatal");
 
-        // Modal login elements
         const modalLoginEl = document.getElementById("modalLogin");
         const modalLogin = new bootstrap.Modal(modalLoginEl, {
           keyboard: false,
@@ -440,29 +688,24 @@
         const loginErrorDiv = document.getElementById("loginError");
         const btnCancelLogin = document.getElementById("btnCancelLogin");
 
-        // Scanner elements
         const btnScanBarcode = document.getElementById("btnScanBarcode");
         const btnStopScan = document.getElementById("btnStopScan");
         const readerElement = document.getElementById("reader");
         const scanResultElement = document.getElementById("scanResult");
 
-        // Settings panel inside admin
         const adminSettings = document.getElementById("adminSettings");
         const formSettings = document.getElementById("formSettings");
         const settingTitle = document.getElementById("settingTitle");
         const settingLanguage = document.getElementById("settingLanguage");
-        const settingTheme = document.getElementById("settingTheme");
 
-        // Variables
         let modeEdit = false;
         let editId = null;
         let produkCache = [];
-        let latestProduk = produkCache;
+        let latestProduk = [];
 
         let html5QrcodeScanner = null;
         let scanning = false;
 
-        // Language data for i18n translations
         const i18nData = {
           id: {
             product_name: "Nama Produk",
@@ -492,7 +735,6 @@
             logout_success: "Logout berhasil",
             settings_title: "Judul Halaman Daftar Produk",
             settings_language: "Bahasa",
-            settings_theme: "Tema",
             settings_save: "Simpan Pengaturan",
             settings_label: "Pengaturan",
             toggle_theme: "Toggle Dark/Light Theme",
@@ -524,19 +766,17 @@
             logout_success: "Logout successful",
             settings_title: "Product List Page Title",
             settings_language: "Language",
-            settings_theme: "Theme",
             settings_save: "Save Settings",
             settings_label: "Settings",
             toggle_theme: "Toggle Dark/Light Theme",
           },
         };
 
-        // Current app state for language and theme
+        // Load language and theme from localStorage or defaults
         let currentLanguage = localStorage.getItem("ws_language") || "id";
         let currentTheme = localStorage.getItem("ws_theme") || "light";
         let customTitle = localStorage.getItem("ws_customTitle") || "";
 
-        // ======== Utility functions ========
         function translatePage(lang) {
           currentLanguage = lang;
           localStorage.setItem("ws_language", lang);
@@ -551,7 +791,6 @@
               }
             }
           });
-          // Update placeholders in some elements that don't use data-i18n attributes for placeholder
           inputNama.placeholder =
             lang === "id" ? "Masukkan nama produk" : "Enter product name";
           inputHarga.placeholder =
@@ -565,20 +804,18 @@
           loginPassword.placeholder =
             lang === "id" ? "Masukkan password" : "Enter password";
 
-          // Update modal login title and buttons
           const modalLoginLabel = document.getElementById("modalLoginLabel");
           if (modalLoginLabel)
             modalLoginLabel.textContent =
               lang === "id" ? "Login Admin" : "Admin Login";
 
-          // Update buttons with fixed text
           btnTambah.textContent =
             lang === "id" ? "Tambah Produk Baru" : "Add New Product";
           btnScanBarcode.textContent =
             lang === "id" ? "Scan Kode Batang" : "Scan Barcode";
           btnStopScan.textContent = lang === "id" ? "Stop Scan" : "Stop Scan";
 
-          // Settings form labels
+          // Settings panel labels
           const settingLabels =
             adminSettings.querySelectorAll("label, h3, button");
           settingLabels.forEach((lbl) => {
@@ -592,8 +829,6 @@
                     : "Product List Page Title";
               } else if (lbl.htmlFor === "settingLanguage") {
                 lbl.textContent = lang === "id" ? "Bahasa" : "Language";
-              } else if (lbl.htmlFor === "settingTheme") {
-                lbl.textContent = lang === "id" ? "Tema" : "Theme";
               }
             } else if (lbl.tagName === "BUTTON") {
               lbl.textContent =
@@ -601,7 +836,7 @@
             }
           });
 
-          // Update table headers manually since we used data-i18n attribute there:
+          // Table headers
           document
             .querySelectorAll(
               "#tabelDaftarProduk thead th, #tabelAdminProduk thead th"
@@ -613,7 +848,6 @@
               }
             });
 
-          // Update table content messages if empty or loading:
           if (tabelDaftarProduk.children.length === 0) {
             tabelDaftarProduk.innerHTML = `<tr><td colspan="2" class="text-center fst-italic">${i18nData[lang].loading_data}</td></tr>`;
           }
@@ -621,24 +855,22 @@
             tabelAdminProduk.innerHTML = `<tr><td colspan="3" class="text-center fst-italic">${i18nData[lang].loading_data}</td></tr>`;
           }
         }
-        // function applyTheme(theme) {
-        //   currentTheme = theme;
-        //   if (theme === "dark") {
-        //     document.body.classList.add("dark-theme");
-        //   } else {
-        //     document.body.classList.remove("dark-theme");
-        //   }
-        //   localStorage.setItem("ws_theme", theme);
-        //   // Update toggle button aria-label/title
-        //   btnToggleTheme.setAttribute(
-        //     "aria-label",
-        //     i18nData[currentLanguage].toggle_theme || "Toggle Dark/Light Theme"
-        //   );
-        //   btnToggleTheme.title = btnToggleTheme.getAttribute("aria-label");
-        // }
+        function applyTheme(theme) {
+          currentTheme = theme;
+          if (theme === "dark") {
+            document.body.classList.add("dark-theme");
+          } else {
+            document.body.classList.remove("dark-theme");
+          }
+          localStorage.setItem("ws_theme", theme);
+          btnToggleTheme.setAttribute(
+            "aria-label",
+            i18nData[currentLanguage].toggle_theme || "Toggle Dark/Light Theme"
+          );
+          btnToggleTheme.title = btnToggleTheme.getAttribute("aria-label");
+        }
         function updateTitle(newTitle) {
           if (newTitle.trim() === "") {
-            // reset to default language title
             customTitle = "";
           } else {
             customTitle = newTitle.trim();
@@ -647,7 +879,6 @@
           renderTitle();
         }
         function renderTitle() {
-          // Use customTitle if set, else default language title
           if (customTitle) {
             judulDaftarProduk.textContent = customTitle;
           } else {
@@ -658,65 +889,67 @@
           }
         }
 
-        // ========= Initial setup =========
-        // On page load apply language, theme and title from localStorage
-        translatePage(currentLanguage);
-        // applyTheme(currentTheme);
-        renderTitle();
+        // ======================== Firestore per-user Produk ===============
+        let unsubscribeProdukUser = null;
 
-        // ========= Firebase + App Logic =========
+        // Mulai listening produk user saat login
+        function mulaiSnapshotListenerProdukUser() {
+          if (unsubscribeProdukUser) {
+            unsubscribeProdukUser();
+            unsubscribeProdukUser = null;
+          }
 
-        // Firestore + Auth setup
-        let unsubscribeProduk = null;
-
-        function mulaiSnapshotListener() {
-          if (unsubscribeProduk) unsubscribeProduk();
-
-          unsubscribeProduk = db
+          const user = auth.currentUser;
+          if (!user) {
+            renderDaftarProduk([]);
+            renderAdminProduk([]);
+            return;
+          }
+          const produkUserRef = db
             .collection("produk")
-            .orderBy("nama")
-            .onSnapshot(
-              (snapshot) => {
-                const items = [];
-                snapshot.forEach((doc) =>
-                  items.push({ id: doc.id, ...doc.data() })
-                );
-                produkCache = items;
-                latestProduk = produkCache;
-                renderDaftarProduk(items);
-                renderAdminProduk(items);
-              },
-              (error) => {
-                if (auth.currentUser) {
-                  Swal.fire(
-                    i18nData[currentLanguage].loading_failed,
-                    error.message,
-                    "error"
-                  );
-                }
-                if (unsubscribeProduk) {
-                  unsubscribeProduk();
-                  unsubscribeProduk = null;
-                }
-                tabelDaftarProduk.innerHTML = `<tr><td colspan="2" class="text-center fst-italic">${i18nData[currentLanguage].loading_failed}</td></tr>`;
-                tabelAdminProduk.innerHTML = `<tr><td colspan="3" class="text-center fst-italic">${i18nData[currentLanguage].loading_failed}</td></tr>`;
-              }
-            );
+            .doc(user.uid)
+            .collection("produkUser")
+            .orderBy("nama");
+
+          unsubscribeProdukUser = produkUserRef.onSnapshot(
+            (snapshot) => {
+              const items = [];
+              snapshot.forEach((doc) =>
+                items.push({ id: doc.id, ...doc.data() })
+              );
+              produkCache = items;
+              latestProduk = produkCache;
+              renderDaftarProduk(items);
+              renderAdminProduk(items);
+            },
+            (error) => {
+              Swal.fire(
+                i18nData[currentLanguage].loading_failed,
+                error.message,
+                "error"
+              );
+              renderDaftarProduk([]);
+              renderAdminProduk([]);
+              unsubscribeProdukUser = null;
+            }
+          );
         }
 
-        // Render daftar produk di halaman publik
+        // Merender daftar produk user di tampilan publik (tab daftar)
         function renderDaftarProduk(items) {
           if (!items.length) {
-            tabelDaftarProduk.innerHTML = `<tr><td colspan="2" class="text-center fst-italic">${i18nData[currentLanguage].loading_failed}</td></tr>`;
+            tabelDaftarProduk.innerHTML = `<tr><td colspan="2" class="text-center fst-italic">${i18nData[currentLanguage].loading_data}</td></tr>`;
             return;
           }
           tabelDaftarProduk.innerHTML = items
             .map(
               (p) =>
                 `<tr>
-                  <td>${p.nama} ${
+                  <td>${escapeHTML(p.nama)} ${
                   p.barcode
-                    ? `<small class="text-muted">[${p.barcode}]</small>`
+                    ? `<small class="text-muted">[${escapeHTML(
+                        p.barcode
+                      )}]</small>`
                     : ""
                 }</td>
                   <td>Rp ${p.harga.toLocaleString("id-ID")}</td>
@@ -724,25 +957,31 @@
             )
             .join("");
         }
-        // Render produk di admin panel
+
+        // Merender tabel admin produk user dengan edit dan hapus
         function renderAdminProduk(items) {
           if (!items.length) {
-            tabelAdminProduk.innerHTML = `<tr><td colspan="3" class="text-center fst-italic">${i18nData[currentLanguage].loading_failed}</td></tr>`;
+            tabelAdminProduk.innerHTML = `<tr><td colspan="3" class="text-center fst-italic">${i18nData[currentLanguage].loading_data}</td></tr>`;
             return;
           }
           tabelAdminProduk.innerHTML = items
             .map(
               (p) =>
                 `<tr data-id="${p.id}">
-                  <td>${p.nama}</td>
+                  <td>${escapeHTML(p.nama)}</td>
                   <td>Rp ${p.harga.toLocaleString("id-ID")}</td>
                   <td>
-                    <button class="btn btn-warning btn-sm me-2 btn-edit">Edit</button>
-                    <button class="btn btn-danger btn-sm btn-delete">Hapus</button>
+                    <button class="btn btn-warning btn-sm me-2 btn-edit" aria-label="Edit produk ${escapeHTML(
+                      p.nama
+                    )}">Edit</button>
+                    <button class="btn btn-danger btn-sm btn-delete" aria-label="Hapus produk ${escapeHTML(
+                      p.nama
+                    )}">Hapus</button>
                   </td>
                 </tr>`
             )
             .join("");
+
           tabelAdminProduk.querySelectorAll(".btn-edit").forEach((btn) => {
             btn.onclick = () => {
               const tr = btn.closest("tr");
@@ -760,7 +999,10 @@
               const tr = btn.closest("tr");
               const id = tr.getAttribute("data-id");
               Swal.fire({
-                title: "Yakin ingin menghapus produk ini?",
+                title:
+                  currentLanguage === "id"
+                    ? "Yakin ingin menghapus produk ini?"
+                    : "Are you sure to delete this product?",
                 icon: "warning",
                 showCancelButton: true,
                 confirmButtonColor: "#d33",
@@ -770,7 +1012,11 @@
                 cancelButtonText: currentLanguage === "id" ? "Batal" : "Cancel",
               }).then((result) => {
                 if (result.isConfirmed) {
+                  const user = auth.currentUser;
+                  if (!user) return;
                   db.collection("produk")
+                    .doc(user.uid)
+                    .collection("produkUser")
                     .doc(id)
                     .delete()
                     .then(() => {
@@ -791,13 +1037,14 @@
           });
         }
 
-        // Form open/close admin product
+        // Membuka form (tambah/edit)
         function openForm(edit = false) {
           modeEdit = edit;
           formProduk.classList.remove("d-none");
           btnTambah.disabled = true;
           inputNama.focus();
         }
+        // Menutup form dan reset
         function closeForm() {
           formProduk.classList.add("d-none");
           btnTambah.disabled = false;
@@ -810,7 +1057,7 @@
         btnTambah.onclick = () => openForm(false);
         btnBatal.onclick = () => closeForm();
 
-        formProduk.addEventListener("submit", (e) => {
+        formProduk.addEventListener("submit", async (e) => {
           e.preventDefault();
           e.stopPropagation();
           formProduk.classList.add("was-validated");
@@ -831,39 +1078,49 @@
             return;
           }
 
-          if (modeEdit && editId) {
-            db.collection("produk")
-              .doc(editId)
-              .update({ nama, harga, barcode: barcode || null })
-              .then(() => {
-                Swal.fire(
-                  currentLanguage === "id" ? "Berhasil" : "Success",
-                  currentLanguage === "id"
-                    ? "Produk berhasil diperbarui."
-                    : "Product successfully updated.",
-                  "success"
-                );
-                closeForm();
-              })
-              .catch((err) => {
-                Swal.fire("Error", err.message, "error");
-              });
-          } else {
-            db.collection("produk")
-              .add({ nama, harga, barcode: barcode || null })
-              .then(() => {
-                Swal.fire(
-                  currentLanguage === "id" ? "Berhasil" : "Success",
-                  currentLanguage === "id"
-                    ? "Produk berhasil ditambahkan."
-                    : "Product successfully added.",
-                  "success"
-                );
-                closeForm();
-              })
-              .catch((err) => {
-                Swal.fire("Error", err.message, "error");
-              });
+          const user = auth.currentUser;
+          if (!user) {
+            Swal.fire(
+              "Error",
+              currentLanguage === "id"
+                ? "Anda harus login."
+                : "You must login.",
+              "error"
+            );
+            closeForm();
+            return;
+          }
+
+          try {
+            const produkRef = db
+              .collection("produk")
+              .doc(user.uid)
+              .collection("produkUser");
+
+            if (modeEdit && editId) {
+              await produkRef
+                .doc(editId)
+                .update({ nama, harga, barcode: barcode || null });
+              Swal.fire(
+                currentLanguage === "id" ? "Berhasil" : "Success",
+                currentLanguage === "id"
+                  ? "Produk berhasil diperbarui."
+                  : "Product successfully updated.",
+                "success"
+              );
+            } else {
+              await produkRef.add({ nama, harga, barcode: barcode || null });
+              Swal.fire(
+                currentLanguage === "id" ? "Berhasil" : "Success",
+                currentLanguage === "id"
+                  ? "Produk berhasil ditambahkan."
+                  : "Product successfully added.",
+                "success"
+              );
+            }
+            closeForm();
+          } catch (err) {
+            Swal.fire("Error", err.message, "error");
           }
         });
 
@@ -871,7 +1128,6 @@
         const daftarTab = new bootstrap.Tab(daftarTabBtn);
         const adminTab = new bootstrap.Tab(adminTabBtn);
 
-        // Blur activation only on login modal
         adminTabBtn.addEventListener("click", (e) => {
           if (!auth.currentUser) {
             e.preventDefault();
@@ -880,7 +1136,6 @@
           }
         });
 
-        // Login modal handlers
         formLogin.addEventListener("submit", (e) => {
           e.preventDefault();
           e.stopPropagation();
@@ -906,6 +1161,7 @@
                 "success"
               );
               adminTab.show();
+              mulaiSnapshotListenerProdukUser();
             })
             .catch((err) => {
               loginErrorDiv.textContent = err.message;
@@ -921,7 +1177,6 @@
           matikanBlur();
         });
 
-        // Logout with confirmation
         btnLogout.onclick = () => {
           Swal.fire({
             title: i18nData[currentLanguage].logout_confirm,
@@ -944,14 +1199,13 @@
           });
         };
 
-        // Auth state changed
         auth.onAuthStateChanged((user) => {
           if (user) {
             matikanBlur();
             btnLogout.classList.remove("d-none");
             btnTambah.disabled = false;
             btnOpenSettings.classList.remove("d-none");
-            mulaiSnapshotListener();
+            mulaiSnapshotListenerProdukUser();
 
             let namaUser = "Admin";
             if (user.displayName && user.displayName.trim()) {
@@ -967,12 +1221,12 @@
             btnOpenSettings.classList.add("d-none");
             adminSettings.classList.add("d-none");
             closeForm();
-            if (unsubscribeProduk) {
-              unsubscribeProduk();
-              unsubscribeProduk = null;
+            if (unsubscribeProdukUser) {
+              unsubscribeProdukUser();
+              unsubscribeProdukUser = null;
             }
-            tabelDaftarProduk.innerHTML = `<tr><td colspan="2" class="text-center fst-italic">${i18nData[currentLanguage].loading_failed}</td></tr>`;
-            tabelAdminProduk.innerHTML = `<tr><td colspan="3" class="text-center fst-italic">${i18nData[currentLanguage].loading_failed}</td></tr>`;
+            tabelDaftarProduk.innerHTML = `<tr><td colspan="2" class="text-center fst-italic">${i18nData[currentLanguage].loading_data}</td></tr>`;
+            tabelAdminProduk.innerHTML = `<tr><td colspan="3" class="text-center fst-italic">${i18nData[currentLanguage].loading_data}</td></tr>`;
 
             judulAdmin.textContent = "Hello {User}";
 
@@ -983,7 +1237,7 @@
           renderTitle();
         });
 
-        // Barcode scanner setup
+        // Barcode scanner
         if (window.Html5Qrcode) {
           html5QrcodeScanner = new Html5Qrcode("reader");
         } else {
@@ -1112,7 +1366,7 @@
             .catch(console.error);
         };
 
-        // Blur control
+        // Blur functions
         function aktifkanBlur() {
           overlayBlur.classList.add("active");
         }
@@ -1120,28 +1374,21 @@
           overlayBlur.classList.remove("active");
         }
 
-        // No global click listener activating blur
-        // Blur only when modal login is shown, removed when hidden
-
-        // Settings panel toggle (inside admin)
+        // Settings toggle
         btnOpenSettings.addEventListener("click", () => {
           if (!adminSettings.classList.contains("d-none")) {
             adminSettings.classList.add("d-none");
           } else {
-            // Load current settings values
             settingTitle.value = customTitle;
             settingLanguage.value = currentLanguage;
-            // settingTheme.value = currentTheme;
             adminSettings.classList.remove("d-none");
           }
         });
 
         formSettings.addEventListener("submit", (e) => {
           e.preventDefault();
-          // Save settings
           updateTitle(settingTitle.value);
           translatePage(settingLanguage.value);
-          //   applyTheme(settingTheme.value);
           Swal.fire(
             currentLanguage === "id" ? "Berhasil" : "Success",
             currentLanguage === "id"
@@ -1152,19 +1399,38 @@
           adminSettings.classList.add("d-none");
         });
 
-        // Theme toggle button (always visible)
-        // btnToggleTheme.addEventListener("click", () => {
-        //   const newTheme = currentTheme === "dark" ? "light" : "dark";
-        //   applyTheme(newTheme);
-        // });
+        btnToggleTheme.addEventListener("click", () => {
+          const newTheme = currentTheme === "dark" ? "light" : "dark";
+          applyTheme(newTheme);
+        });
 
-        // Initialize aria-label/title of theme toggle button
-        btnToggleTheme.setAttribute(
-          "aria-label",
-          i18nData[currentLanguage].toggle_theme
-        );
-        btnToggleTheme.title = i18nData[currentLanguage].toggle_theme;
+        // Accessibility helper: escape HTML to prevent injection
+        function escapeHTML(str) {
+          return str.replace(/[&<>"']/g, (m) => {
+            switch (m) {
+              case "&":
+                return "&amp;";
+              case "<":
+                return "&lt;";
+              case ">":
+                return "&gt;";
+              case '"':
+                return "&quot;";
+              case "'":
+                return "&#039;";
+              default:
+                return m;
+            }
+          });
+        }
+
+        // Initialize page
+        translatePage(currentLanguage);
+        applyTheme(currentTheme);
+        renderTitle();
       })();
     </script>
+    
+    
   </body>
 </html>
