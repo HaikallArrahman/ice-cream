@@ -492,7 +492,7 @@
                 Mohon isi harga produk yang valid.
               </div>
             </div>
-            <div class="col-md-12">
+            <div class="col-md-12 mt-2 d-flex gap-2 align-items-center">
               <label for="inputBarcode" class="form-label" data-i18n="barcode">
                 Kode Batang (Barcode)
               </label>
@@ -503,9 +503,18 @@
                 autocomplete="off"
                 placeholder="Masukkan kode batang atau scan"
               />
-              <small class="form-text text-muted" data-i18n="barcode_help">
-                Kode batang ini digunakan untuk pencarian dengan scan.
-              </small>
+              <button
+    type="button"
+    id="btnScanBarcodeAdmin"
+    class="btn btn-outline-primary"
+    aria-label="Scan Kode Batang"
+    title="Scan Kode Batang"
+  >
+    📷 Scan Kode Batang
+  </button>
+  <!-- Tempat munculnya scanner -->
+  <div id="scannerContainerAdmin" style="width: 320px; display: none;"></div>
+</div>
             </div>
             <div class="col-12 d-flex gap-2 justify-content-end">
               <button
@@ -683,6 +692,8 @@
     <!-- SweetAlert2 -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <!-- Html5 QR Code (barcode scanner) -->
+     <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+
     <script
       src="https://unpkg.com/html5-qrcode"
       type="text/javascript"
@@ -798,6 +809,77 @@
             settingsPanel.classList.add("show");
           }
         });
+
+        (() => {
+    const btnScanBarcodeAdmin = document.getElementById("btnScanBarcodeAdmin");
+    const scannerContainerAdmin = document.getElementById("scannerContainerAdmin");
+    const inputBarcodeAdmin = document.getElementById("inputBarcode");
+    let html5QrcodeScannerAdmin = null;
+    let scanningAdmin = false;
+
+    btnScanBarcodeAdmin.addEventListener("click", () => {
+      if (!scanningAdmin) {
+        // Mulai scan
+        scannerContainerAdmin.style.display = "block";
+        scanningAdmin = true;
+        if (!html5QrcodeScannerAdmin) {
+          html5QrcodeScannerAdmin = new Html5Qrcode("scannerContainerAdmin");
+        }
+        html5QrcodeScannerAdmin
+          .start(
+            { facingMode: "environment" },
+            {
+              fps: 10,
+              qrbox: { width: 250, height: 100 },
+              formatsToSupport: [
+                Html5QrcodeSupportedFormats.CODE_128,
+                Html5QrcodeSupportedFormats.EAN_13,
+                Html5QrcodeSupportedFormats.EAN_8,
+                Html5QrcodeSupportedFormats.UPC_A,
+                Html5QrcodeSupportedFormats.UPC_E,
+                Html5QrcodeSupportedFormats.CODE_39,
+                Html5QrcodeSupportedFormats.QR_CODE,
+              ],
+            },
+            (decodedText) => {
+              // isi input dengan hasil scan
+              inputBarcodeAdmin.value = decodedText;
+              // hentikan scan
+              html5QrcodeScannerAdmin
+                .stop()
+                .then(() => {
+                  scannerContainerAdmin.style.display = "none";
+                  scanningAdmin = false;
+                })
+                .catch((err) => {
+                  console.error("Gagal berhenti scan:", err);
+                });
+            },
+            (errorMessage) => {
+              // console.log error kecil bisa diabaikan
+            }
+          )
+          .catch((err) => {
+            alert("Gagal mengakses kamera scan kode batang: " + err);
+            scannerContainerAdmin.style.display = "none";
+            scanningAdmin = false;
+          });
+      } else {
+        // Jika sedang scan, maka klik tombol untuk berhenti scanner
+        if (html5QrcodeScannerAdmin) {
+          html5QrcodeScannerAdmin
+            .stop()
+            .then(() => {
+              scannerContainerAdmin.style.display = "none";
+              scanningAdmin = false;
+            })
+            .catch((err) => {
+              console.error("Gagal berhenti scan:", err);
+            });
+        }
+      }
+    });
+  })();
         let modeEdit = false;
         let editId = null;
         let produkCache = [];
