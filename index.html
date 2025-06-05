@@ -17,198 +17,7 @@
       href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css"
       rel="stylesheet"
     />
-    <style>
-      /* Base light theme */
-      body {
-        background: linear-gradient(135deg, #c3e7f7 0%, #fff 100%);
-        min-height: 100vh;
-        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-        color: #33475b;
-        padding: 30px 15px 50px;
-        transition: background-color 0.3s ease, color 0.3s ease;
-      }
-      .container {
-        max-width: 900px;
-        background: #fefefe;
-        padding: 35px 40px;
-        border-radius: 16px;
-        box-shadow: 0 14px 40px rgba(0, 0, 0, 0.1),
-          0 8px 20px rgba(0, 0, 0, 0.07);
-        position: relative;
-        z-index: 1;
-      }
-      nav button.nav-link.active {
-        background: linear-gradient(135deg, #1962d0 0%, #0d3d81 100%);
-        color: white !important;
-      }
-      #btnLogout {
-        position: fixed;
-        top: 15px;
-        right: 25px;
-        z-index: 1051;
-      }
-      .table thead {
-        background: #2980b9;
-        color: #fff;
-      }
-      .table tbody tr {
-        background: #f4faff;
-        border-radius: 12px;
-      }
-      .table {
-        border-collapse: separate !important;
-        border-spacing: 0 10px !important;
-      }
-      #reader {
-        width: 320px;
-        margin: 15px auto 0;
-        border-radius: 12px;
-        box-shadow: 0 0 12px rgba(25, 98, 208, 0.5);
-      }
-      #scanResult {
-        text-align: center;
-        margin-top: 12px;
-        font-weight: 700;
-        color: #1962d0;
-        font-size: 1.25rem;
-      }
-      /* Overlay Blur */
-      #overlayBlur {
-        position: fixed;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        backdrop-filter: blur(6px);
-        background-color: rgba(255, 255, 255, 0.3);
-        pointer-events: none;
-        opacity: 0;
-        transition: opacity 0.3s ease;
-        z-index: 1040;
-      }
-      #overlayBlur.active {
-        pointer-events: auto;
-        opacity: 1;
-      }
-      /* Additional styling */
-      .btn-scan {
-        font-weight: 600;
-        font-size: 1.1rem;
-        padding: 0.5rem 1.5rem;
-        border-radius: 30px;
-        transition: background-color 0.3s ease, box-shadow 0.3s ease;
-      }
-      .btn-scan:hover {
-        background-color: #0d3d81;
-        color: #fff;
-        box-shadow: 0 8px 24px rgba(25, 98, 208, 0.6);
-      }
-      /* Admin header */
-      #judulAdmin {
-        font-weight: 700;
-        color: #1053af;
-      }
-      /* Customize modal */
-      .modal-content {
-        border-radius: 12px;
-        box-shadow: 0 14px 40px rgba(0, 0, 0, 0.15);
-      }
-      .modal-title {
-        color: #0d3d81;
-        font-weight: 700;
-      }
-      /* Adjust form buttons spacing in modal */
-      .modal-footer.d-flex.gap-2 > button {
-        font-size: 1rem;
-        padding: 0.5rem 0;
-        border-radius: 8px;
-        transition: background-color 0.3s ease;
-      }
-      /* Responsive adjustments */
-      @media (max-width: 480px) {
-        #reader {
-          width: 100%;
-        }
-        .btn-scan {
-          padding: 0.5rem 1rem;
-          font-size: 1rem;
-          width: 100%;
-        }
-        #scanResult {
-          font-size: 1rem;
-        }
-      }
-
-      /* Dark theme */
-      body.dark-theme {
-        background: #121212;
-        color: #ddd;
-      }
-      body.dark-theme .container {
-        background: #1e1e1e;
-        box-shadow: 0 14px 40px rgba(0, 0, 0, 0.7);
-        color: #ddd;
-      }
-      body.dark-theme nav button.nav-link.active {
-        background: linear-gradient(135deg, #4a9cf7 0%, #2768d1 100%);
-        color: #eef5ff !important;
-      }
-      body.dark-theme .table thead {
-        background: #2768d1;
-      }
-      body.dark-theme .table tbody tr {
-        background: #2a2a2a;
-      }
-      body.dark-theme #reader {
-        box-shadow: 0 0 12px #4a9cf7;
-      }
-      body.dark-theme #btnLogout {
-        background-color: #d9534f;
-        color: #fff;
-        border: none;
-      }
-      body.dark-theme .btn-scan:hover {
-        background-color: #4a9cf7;
-      }
-      body.dark-theme .modal-content {
-        background-color: #2a2a2a;
-        color: #ddd;
-      }
-      body.dark-theme .modal-title {
-        color: #4a9cf7;
-      }
-      body.dark-theme .form-control {
-        background-color: #3c3c3c;
-        color: #ddd;
-        border-color: #555;
-      }
-      body.dark-theme .form-control:focus {
-        background-color: #444;
-        color: #fff;
-        border-color: #4a9cf7;
-        box-shadow: 0 0 4px #4a9cf7;
-      }
-      body.dark-theme .btn-primary {
-        background-color: #4a9cf7;
-        border: none;
-      }
-      body.dark-theme .btn-danger {
-        background-color: #d9534f;
-        border: none;
-      }
-
-      /* Settings Panel */
-      #btnOpenSettings {
-        position: fixed;
-        bottom: 20px;
-        right: 20px;
-        z-index: 1052;
-      }
-
-      #settingsModal .form-label {
-        font-weight: 600;
-      }
-    </style>
+    <link rel="stylesheet" href="style.css" />
   </head>
   <body>
     <button id="btnLogout" class="btn btn-danger d-none shadow-sm">
@@ -584,13 +393,13 @@
     <script>
       (() => {
         const firebaseConfig = {
-          apiKey: "AIzaSyD9qhbGRUuKne_6UG_FBO7PwRyakqGO0eE",
-          authDomain: "warung-sh-cellular.firebaseapp.com",
-          projectId: "warung-sh-cellular",
-          storageBucket: "warung-sh-cellular.firebasestorage.app",
-          messagingSenderId: "361126163338",
-          appId: "1:361126163338:web:22eabb207d112d261d0e73",
-          measurementId: "G-X3QY8GXKND",
+          apiKey: "AIzaSyANU8fTIPC3b0bbelAvALVwtZVnStd3UF4",
+          authDomain: "warung-4d2ae.firebaseapp.com",
+          projectId: "warung-4d2ae",
+          storageBucket: "warung-4d2ae.firebasestorage.app",
+          messagingSenderId: "882211630737",
+          appId: "1:882211630737:web:cb1c91a88b616cfe37d930",
+          measurementId: "G-GRL90K1QCW",
         };
         firebase.initializeApp(firebaseConfig);
 
@@ -1332,7 +1141,7 @@
           // Save settings
           updateTitle(settingTitle.value);
           translatePage(settingLanguage.value);
-        //   applyTheme(settingTheme.value);
+          //   applyTheme(settingTheme.value);
           Swal.fire(
             currentLanguage === "id" ? "Berhasil" : "Success",
             currentLanguage === "id"

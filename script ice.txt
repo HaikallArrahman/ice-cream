@@ -1,0 +1,20 @@
+const firebaseConfig = {
+  apiKey: "AIzaSyANU8fTIPC3b0bbelAvALVwtZVnStd3UF4",
+  authDomain: "warung-4d2ae.firebaseapp.com",
+  projectId: "warung-4d2ae",
+  storageBucket: "warung-4d2ae.firebasestorage.app",
+  messagingSenderId: "882211630737",
+  appId: "1:882211630737:web:cb1c91a88b616cfe37d930",
+  measurementId: "G-GRL90K1QCW"
+};
+
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /{document=**} {
+      allow read, write: if request.auth != null;
+    }
+  }
+}
+
+Kalau butuh modifikasi atau contoh Rules keamanan Firestore, silakan tanya kembali.
