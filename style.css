@@ -21,20 +21,21 @@ body {
 
 /* Navbar active tab with bottom line indicator */
 nav button.nav-link.active,
-ul.nav-tabs > li > button.nav-link.active {
- 
+ul.nav-tabs>li>button.nav-link.active {
+
   position: relative;
 }
 
 nav button.nav-link.active::after,
-ul.nav-tabs > li > button.nav-link.active::after {
+ul.nav-tabs>li>button.nav-link.active::after {
   content: "";
   position: absolute;
   bottom: 0;
   left: 10%;
   width: 80%;
   height: 3px;
-  background: #057ecf; /* bright accent color */
+  background: #057ecf;
+  /* bright accent color */
   border-radius: 2px 2px 0 0;
 }
 
@@ -60,7 +61,34 @@ ul.nav-tabs > li > button.nav-link.active::after {
   border-spacing: 0 10px !important;
 }
 
+.container {
+  max-width: 700px;
+  background-color: #f8f9fa;
+  border-radius: 0.625rem;
+  padding: 2rem;
+  box-shadow:
+    0 0.25rem 0.5rem rgba(0, 0, 0, 0.1),
+    inset 0 0 0.25rem rgba(0, 0, 0, 0.02);
+}
+
 #reader {
+  margin: 0 auto 1rem;
+  width: 280px;
+  border-radius: 0.5rem;
+  overflow: hidden;
+  box-shadow: 0 0 15px rgba(13, 110, 253, 0.5);
+  display: none;
+}
+
+#scanResult {
+  min-height: 2rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+  color: #0d6efd;
+  text-align: center;
+}
+
+F #reader {
   width: 320px;
   margin: 15px auto 0;
   border-radius: 12px;
@@ -128,7 +156,7 @@ ul.nav-tabs > li > button.nav-link.active::after {
 }
 
 /* Adjust form buttons spacing in modal */
-.modal-footer.d-flex.gap-2 > button {
+.modal-footer.d-flex.gap-2>button {
   font-size: 1rem;
   padding: 0.5rem 0;
   border-radius: 8px;
@@ -165,14 +193,14 @@ body.dark-theme .container {
 }
 
 body.dark-theme nav button.nav-link.active,
-body.dark-theme ul.nav-tabs > li > button.nav-link.active {
+body.dark-theme ul.nav-tabs>li>button.nav-link.active {
   background: linear-gradient(135deg, #4a9cf7 0%, #2768d1 100%);
   color: #eef5ff !important;
   position: relative;
 }
 
 body.dark-theme nav button.nav-link.active::after,
-body.dark-theme ul.nav-tabs > li > button.nav-link.active::after {
+body.dark-theme ul.nav-tabs>li>button.nav-link.active::after {
   content: "";
   position: absolute;
   bottom: 0;
@@ -248,4 +276,3 @@ body.dark-theme .btn-danger {
 #settingsModal .form-label {
   font-weight: 600;
 }
-
