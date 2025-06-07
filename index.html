@@ -426,6 +426,7 @@
                 aria-label="Scan Barcode">
                 Scan Kode Batang
               </button>
+              <svg id="barcode"></svg>
               <button id="btnStopScan" class="btn btn-outline-danger btn-scan d-none" data-i18n="stop_scan"
                 aria-label="Stop Scan">
                 Stop Scan
@@ -578,6 +579,7 @@
 
   <script>
     -(() => {
+
       const firebaseConfig = {
         apiKey: "AIzaSyANU8fTIPC3b0bbelAvALVwtZVnStd3UF4",
         authDomain: "warung-4d2ae.firebaseapp.com",
@@ -1319,13 +1321,16 @@
               },
               (decodedText) => {
                 tampilkanHasilScan(decodedText);
-                html5QrcodeScanner.stop();
+                html5QrcodeScanner.stop(); // Berhenti scan otomatis setelah dapat kode
                 scanning = false;
                 btnScanBarcode.classList.remove("d-none");
                 btnStopScan.classList.add("d-none");
                 readerElement.style.display = "none";
+                inputBarcode.focus(); // opsional agar langsung fokus di input barcode
               },
-              (errorMessage) => { }
+              (errorMessage) => {
+                // ignore atau bisa handle jika ingin
+              }
             )
             .catch((err) => {
               Swal.fire(
@@ -1353,6 +1358,21 @@
           })
           .catch(console.error);
       };
+
+      function tampilkanHasilScan(code) {
+        playBeep();
+        const produk = cariProdukByBarcode(code);
+        inputBarcode.value = code; // otomatis isi kode barcode
+        scanResultElement.textContent = ""; // hilangkan teks hasil scan (opsional)
+
+        if (produk) {
+          // Optional: Kamu bisa beri tanda lain kalau produk ditemukan
+          // Contoh highlight atau ubah warna border input
+          inputBarcode.style.borderColor = "green";
+        } else {
+          inputBarcode.style.borderColor = "red";
+        }
+      }
 
       // Blur functions
       function aktifkanBlur() {
